@@ -1,7 +1,10 @@
 from enum import Enum
-from typing import Callable
+from typing import Callable, TypeVar
 
 from aocd import get_data
+
+
+T = TypeVar("T")
 
 
 class Part(Enum):
@@ -20,9 +23,9 @@ class Runner:
 
     def solution(
         self, year: int, day: int, part: Part
-    ) -> Callable[[Callable[[str], str]], None]:
-        def register_solution(solution: Callable[[str], str]) -> None:
-            self.__solutions[(year, day, part)] = solution
+    ) -> Callable[[Callable[[str], T]], None]:
+        def register_solution(solution: Callable[[str], T]) -> None:
+            self.__solutions[(year, day, part)] = lambda x: str(solution(x))
 
         return register_solution
 
