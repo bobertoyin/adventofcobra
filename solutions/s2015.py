@@ -40,15 +40,9 @@ def ribbon(dims: tuple[int, int, int]) -> int:
 
 @r.solution(2015, 2, Part.A)
 def s_2015_2_a(solution_input: str) -> str:
-    total = 0
-    for i in solution_input.split("\n"):
-        total += wrapping_paper(gift_dims(i))
-    return str(total)
+    return str(sum([wrapping_paper(gift_dims(i)) for i in solution_input.split("\n")]))
 
 
 @r.solution(2015, 2, Part.B)
 def s_2015_2_b(solution_input: str) -> str:
-    total = 0
-    for i in solution_input.split("\n"):
-        total += ribbon(gift_dims(i))
-    return str(total)
+    return str(sum([ribbon(gift_dims(i)) for i in solution_input.split("\n")]))
