@@ -1,5 +1,7 @@
 from .runner import r, Part
 
+from hashlib import md5
+
 
 def instr_to_val(instr: str) -> int:
     return 1 if instr == "(" else -1
@@ -77,3 +79,21 @@ def s_2015_3_b(solution_input: str) -> str:
         else:
             robo_positions.append(move_santa(robo_positions[-1], move))
     return str(len(set(santa_positions + robo_positions)))
+
+
+@r.solution(2015, 4, Part.A)
+def s_2015_4_a(solution_input: str) -> str:
+    for num in range(0, 999_999):
+        digest = md5(f"{solution_input}{num}".encode()).hexdigest()
+        if digest.startswith("00000"):
+            return str(num)
+    return ""
+
+
+@r.solution(2015, 4, Part.B)
+def s_2015_4_b(solution_input: str) -> str:
+    for num in range(0, 9_999_999):
+        digest = md5(f"{solution_input}{num}".encode()).hexdigest()
+        if digest.startswith("000000"):
+            return str(num)
+    return ""
