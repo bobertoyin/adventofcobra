@@ -46,3 +46,34 @@ def s_2015_2_a(solution_input: str) -> str:
 @r.solution(2015, 2, Part.B)
 def s_2015_2_b(solution_input: str) -> str:
     return str(sum([ribbon(gift_dims(i)) for i in solution_input.split("\n")]))
+
+
+def move_santa(pos: tuple[int, int], move: str) -> tuple[int, int]:
+    if move == "^":
+        return (pos[0], pos[1] + 1)
+    elif move == "<":
+        return (pos[0] - 1, pos[1])
+    elif move == ">":
+        return (pos[0] + 1, pos[1])
+    else:
+        return (pos[0], pos[1] - 1)
+
+
+@r.solution(2015, 3, Part.A)
+def s_2015_3_a(solution_input: str) -> str:
+    positions = [(0, 0)]
+    for move in solution_input:
+        positions.append(move_santa(positions[-1], move))
+    return str(len(set(positions)))
+
+
+@r.solution(2015, 3, Part.B)
+def s_2015_3_b(solution_input: str) -> str:
+    santa_positions = [(0, 0)]
+    robo_positions = [(0, 0)]
+    for index, move in enumerate(solution_input):
+        if index % 2 == 0:
+            santa_positions.append(move_santa(santa_positions[-1], move))
+        else:
+            robo_positions.append(move_santa(robo_positions[-1], move))
+    return str(len(set(santa_positions + robo_positions)))
