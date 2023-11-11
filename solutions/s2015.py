@@ -538,3 +538,53 @@ def s_2015_13_a(solution_input: str) -> int:
 @r.solution(2015, 13, Part.B)
 def s_2015_13_b(solution_input: str) -> int:
     return best_arr(solution_input, True)
+
+
+def parse_reindeer(info: str) -> tuple[str, tuple[int, int, int]]:
+    parts = info.split(" ")
+    return (parts[0], (int(parts[3]), int(parts[6]), int(parts[-2])))
+
+
+def sim_race(
+    length: int, reindeers: dict[str, tuple[int, int, int]], use_points: bool
+) -> dict[str, int]:
+    distances: dict[str, int] = defaultdict(lambda: 0)
+    points: dict[str, int] = defaultdict(lambda: 0)
+    rest: dict[str, int] = defaultdict(lambda: 0)
+    fuel = {reindeer: reindeers[reindeer][1] for reindeer in reindeers}
+    for _ in range(length):
+        for reindeer in reindeers:
+            if rest[reindeer] > 0:
+                rest[reindeer] -= 1
+                if rest[reindeer] == 0:
+                    fuel[reindeer] = reindeers[reindeer][1]
+            else:
+                fuel[reindeer] -= 1
+                distances[reindeer] += reindeers[reindeer][0]
+                if fuel[reindeer] == 0:
+                    rest[reindeer] = reindeers[reindeer][2]
+        if use_points:
+            best = max(distances.values())
+            for reindeer in reindeers:
+                if distances[reindeer] == best:
+                    points[reindeer] += 1
+    return points if use_points else distances
+
+
+def best_reindeer(solution_input: str, use_points: bool) -> int:
+    reindeers: dict[str, tuple[int, int, int]] = {}
+    for info in solution_input.split("\n"):
+        reindeer, ability = parse_reindeer(info)
+        reindeers[reindeer] = ability
+    results = sim_race(2503, reindeers, use_points)
+    return max(results.values())
+
+
+@r.solution(2015, 14, Part.A)
+def s_2015_14_a(solution_input: str) -> int:
+    return best_reindeer(solution_input, False)
+
+
+@r.solution(2015, 14, Part.B)
+def s_2015_14_b(solution_input: str) -> int:
+    return best_reindeer(solution_input, True)
