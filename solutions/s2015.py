@@ -365,7 +365,7 @@ def s_2015_9_a(solution_input: str) -> int:
 
 
 @r.solution(2015, 9, Part.B)
-def s_2015_9_B(solution_input: str) -> int:
+def s_2015_9_b(solution_input: str) -> int:
     graph: defaultdict[str, dict[str, int]] = defaultdict(dict)
     for line in solution_input.split("\n"):
         source, target, distance = parse_location_pair(line)
@@ -405,3 +405,61 @@ def s_2015_10_a(solution_input: str) -> int:
 @r.solution(2015, 10, Part.B)
 def s_2015_10_b(solution_input: str) -> int:
     return len(look_and_say_multi(solution_input, 50))
+
+
+def increment_encoded_password(password: list[int]) -> None:
+    index = len(password) - 1
+    finished = False
+    while not finished:
+        if password[index] == 25:
+            password[index] = 0
+            index -= 1
+        else:
+            password[index] += 1
+            finished = True
+
+
+def valid_encoded_password(password: list[int]) -> bool:
+    has_invalid_letters = 8 in password or 14 in password or 11 in password
+    has_stair = False
+    previous_chars: list[int] = []
+    pairs = set()
+    for char in password:
+        if len(previous_chars) > 0:
+            if char == previous_chars[-1]:
+                pairs.add(char)
+        if len(previous_chars) > 1:
+            if (
+                char - previous_chars[-1] == 1
+                and previous_chars[-1] - previous_chars[-2] == 1
+            ):
+                has_stair = True
+        previous_chars.append(char)
+    return not has_invalid_letters and has_stair and len(pairs) > 1
+
+
+def encode_password(password: str) -> list[int]:
+    encoding = {char: val for val, char in enumerate("abcdefghijklmnopqrstuvwxyz")}
+    return [encoding[char] for char in password]
+
+
+def decode_password(password: list[int]) -> str:
+    decoding = {val: char for val, char in enumerate("abcdefghijklmnopqrstuvwxyz")}
+    return "".join([decoding[char] for char in password])
+
+
+@r.solution(2015, 11, Part.A)
+def s_2015_11_a(solution_input: str) -> str:
+    password = encode_password(solution_input)
+    while not valid_encoded_password(password):
+        increment_encoded_password(password)
+    return decode_password(password)
+
+
+@r.solution(2015, 11, Part.B)
+def s_2015_11_b(solution_input: str) -> str:
+    password = encode_password(s_2015_11_a(solution_input))
+    increment_encoded_password(password)
+    while not valid_encoded_password(password):
+        increment_encoded_password(password)
+    return decode_password(password)
