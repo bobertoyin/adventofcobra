@@ -1,9 +1,12 @@
 from collections import defaultdict, deque
 from itertools import permutations
+from json import loads
 from hashlib import md5
-from typing import Callable
+from typing import Any, Callable
 
 from .runner import r, Part, T
+
+json = int | str | bool | list[Any] | dict[str, Any]
 
 
 def instr_to_val(instr: str) -> int:
@@ -463,3 +466,28 @@ def s_2015_11_b(solution_input: str) -> str:
     while not valid_encoded_password(password):
         increment_encoded_password(password)
     return decode_password(password)
+
+
+def sum_json_nums(input_json: json, ignore_red: bool) -> int:
+    if type(input_json) == int:
+        return input_json
+    elif type(input_json) == list:
+        l: list[json] = input_json
+        return sum([sum_json_nums(item, ignore_red) for item in l])
+    elif type(input_json) == dict:
+        d: dict[str, json] = input_json
+        if ignore_red and "red" in d.values():
+            return 0
+        return sum([sum_json_nums(value, ignore_red) for value in d.values()])
+    else:
+        return 0
+
+
+@r.solution(2015, 12, Part.A)
+def s_2015_12_a(solution_input: str) -> int:
+    return sum_json_nums(loads(solution_input), False)
+
+
+@r.solution(2015, 12, Part.B)
+def s_2015_12_b(solution_input: str) -> int:
+    return sum_json_nums(loads(solution_input), True)
