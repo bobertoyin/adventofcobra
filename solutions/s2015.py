@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+from itertools import permutations
 from hashlib import md5
 from typing import Callable
 
@@ -323,3 +324,52 @@ def s_2015_8_b(solution_input: str) -> int:
     return sum(
         [len(encode_str(string)) - len(string) for string in solution_input.split("\n")]
     )
+
+
+def parse_location_pair(line: str) -> tuple[str, str, int]:
+    source_target, distance = line.split(" = ")
+    source, target = source_target.split(" to ")
+    return (source, target, int(distance))
+
+
+def all_complete_path_lengths(graph: dict[str, dict[str, int]]) -> list[int]:
+    lengths: list[int] = []
+    for path in permutations(graph.keys(), len(graph.keys())):
+        length = path_length(graph, path)
+        if length is not None:
+            lengths.append(length)
+    return lengths
+
+
+def path_length(graph: dict[str, dict[str, int]], path: tuple[str, ...]) -> int | None:
+    length = 0
+    last = path[0]
+    for node in path[1:]:
+        if node in graph[last]:
+            length += graph[last][node]
+            last = node
+        else:
+            return None
+    return length
+
+
+@r.solution(2015, 9, Part.A)
+def s_2015_9_a(solution_input: str) -> int:
+    graph: defaultdict[str, dict[str, int]] = defaultdict(dict)
+    for line in solution_input.split("\n"):
+        source, target, distance = parse_location_pair(line)
+        graph[source][target] = distance
+        graph[target][source] = distance
+    lengths = all_complete_path_lengths(graph)
+    return min(lengths)
+
+
+@r.solution(2015, 9, Part.B)
+def s_2015_9_B(solution_input: str) -> int:
+    graph: defaultdict[str, dict[str, int]] = defaultdict(dict)
+    for line in solution_input.split("\n"):
+        source, target, distance = parse_location_pair(line)
+        graph[source][target] = distance
+        graph[target][source] = distance
+    lengths = all_complete_path_lengths(graph)
+    return max(lengths)
