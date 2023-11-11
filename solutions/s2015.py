@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+from copy import deepcopy
 from itertools import permutations
 from json import loads
 from hashlib import md5
@@ -491,3 +492,49 @@ def s_2015_12_a(solution_input: str) -> int:
 @r.solution(2015, 12, Part.B)
 def s_2015_12_b(solution_input: str) -> int:
     return sum_json_nums(loads(solution_input), True)
+
+
+def parse_seat_rel(rel: str) -> tuple[str, str, int]:
+    person, target = rel.replace(".", "").split(" would ")
+    effect, neighbor = target.split(" happiness units by sitting next to ")
+    eff_sign, eff_val = effect.split(" ")
+    val = int(eff_val)
+    val *= -1 if eff_sign == "lose" else 1
+    return (person, neighbor, val)
+
+
+def score_arrangement(arr: list[str], rels: dict[str, dict[str, int]]) -> int:
+    score = 0
+    for index, person in enumerate(arr):
+        left = index - 1 if index > 0 else len(arr) - 1
+        right = index + 1 if index < len(arr) - 1 else 0
+        score += rels[person][arr[left]]
+        score += rels[person][arr[right]]
+    return score
+
+
+def best_arr(solution_input: str, add_self: bool) -> int:
+    rels: defaultdict[str, dict[str, int]] = defaultdict(dict)
+    for rel in solution_input.split("\n"):
+        person, neighbor, effect = parse_seat_rel(rel)
+        rels[person][neighbor] = effect
+    if add_self:
+        for other in deepcopy(list(rels.keys())):
+            rels["Robert"][other] = 0
+            rels[other]["Robert"] = 0
+    return max(
+        [
+            score_arrangement(list(arr), rels)
+            for arr in permutations(rels.keys(), len(rels.keys()))
+        ]
+    )
+
+
+@r.solution(2015, 13, Part.A)
+def s_2015_13_a(solution_input: str) -> int:
+    return best_arr(solution_input, False)
+
+
+@r.solution(2015, 13, Part.B)
+def s_2015_13_b(solution_input: str) -> int:
+    return best_arr(solution_input, True)
