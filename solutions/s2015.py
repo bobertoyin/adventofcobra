@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from hashlib import md5
 from typing import Callable
 
@@ -209,3 +209,80 @@ def s_2015_6_b(solution_input: str) -> int:
         action, bl, tr = parse_light_cmd(line)
         modify_grid(grid, action, bl, tr, var_mod)
     return sum([sum(row) for row in grid])
+
+
+def parse_circuit_cmd(cmd: str) -> tuple[list[str], str]:
+    op, wire = [part.strip() for part in cmd.split("->")]
+    return (op.split(" "), wire)
+
+
+def eval_op(
+    wires: dict[str, int],
+    op: list[str],
+    wire: str,
+) -> tuple[list[str], str] | None:
+    if len(op) == 1:
+        lh = op[0]
+        lh_search = int(lh) if lh.isdigit() else wires.get(lh)
+        if lh_search is not None:
+            wires[wire] = lh_search
+            return None
+    if len(op) == 2:
+        lh = op[1]
+        lh_search = int(lh) if lh.isdigit() else wires.get(lh)
+        if lh_search is not None:
+            wires[wire] = ~lh_search & 0xFFFF
+            return None
+    if len(op) == 3:
+        lh, operator, rh = op
+        operator = operator.lower()
+        lh_search = int(lh) if lh.isdigit() else wires.get(lh)
+        rh_search = int(rh) if rh.isdigit() else wires.get(rh)
+        if lh_search is not None and rh_search is not None:
+            if operator == "and":
+                wires[wire] = lh_search & rh_search
+            if operator == "or":
+                wires[wire] = lh_search | rh_search
+            if operator == "lshift":
+                wires[wire] = lh_search << rh_search
+            if operator == "rshift":
+                wires[wire] = lh_search >> rh_search
+            return None
+    return (op, wire)
+
+
+@r.solution(2015, 7, Part.A)
+def s_2015_7_a(solution_input: str) -> int:
+    wires: dict[str, int] = {}
+    deferred: deque[tuple[list[str], str]] = deque()
+    for line in solution_input.split("\n"):
+        op, wire = parse_circuit_cmd(line)
+        defer = eval_op(wires, op, wire)
+        if defer:
+            deferred.append(defer)
+    while len(deferred) > 0:
+        op, wire = deferred.popleft()
+        defer = eval_op(wires, op, wire)
+        if defer:
+            deferred.append(defer)
+    return wires["a"]
+
+
+@r.solution(2015, 7, Part.B)
+def s_2015_7_b(solution_input: str) -> int:
+    prior = s_2015_7_a(solution_input)
+    wires: dict[str, int] = {}
+    deferred: deque[tuple[list[str], str]] = deque()
+    for line in solution_input.split("\n"):
+        op, wire = parse_circuit_cmd(line)
+        if wire == "b":
+            op = [str(prior)]
+        defer = eval_op(wires, op, wire)
+        if defer:
+            deferred.append(defer)
+    while len(deferred) > 0:
+        op, wire = deferred.popleft()
+        defer = eval_op(wires, op, wire)
+        if defer:
+            deferred.append(defer)
+    return wires["a"]

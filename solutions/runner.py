@@ -23,9 +23,10 @@ class Runner:
 
     def solution(
         self, year: int, day: int, part: Part
-    ) -> Callable[[Callable[[str], T]], None]:
-        def register_solution(solution: Callable[[str], T]) -> None:
+    ) -> Callable[[Callable[[str], T]], Callable[[str], T]]:
+        def register_solution(solution: Callable[[str], T]) -> Callable[[str], T]:
             self.__solutions[(year, day, part)] = lambda x: str(solution(x))
+            return solution
 
         return register_solution
 
