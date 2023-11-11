@@ -286,3 +286,40 @@ def s_2015_7_b(solution_input: str) -> int:
         if defer:
             deferred.append(defer)
     return wires["a"]
+
+
+def escaped_length(string: str) -> int:
+    string = string[1 : len(string) - 1]
+    length = 0
+    skip = 0
+    for index, char in enumerate(string):
+        if skip > 0:
+            skip -= 1
+        else:
+            if char == "\\":
+                skip = 3 if index < len(string) - 1 and string[index + 1] == "x" else 1
+            length += 1
+    return length
+
+
+def encode_str(string: str) -> str:
+    encoded = '"'
+    for char in string:
+        new_char = "\\" + char if char == '"' or char == "\\" else char
+        encoded += new_char
+    encoded += '"'
+    return encoded
+
+
+@r.solution(2015, 8, Part.A)
+def s_2015_8_a(solution_input: str) -> int:
+    return sum(
+        [len(string) - escaped_length(string) for string in solution_input.split("\n")]
+    )
+
+
+@r.solution(2015, 8, Part.B)
+def s_2015_8_b(solution_input: str) -> int:
+    return sum(
+        [len(encode_str(string)) - len(string) for string in solution_input.split("\n")]
+    )
