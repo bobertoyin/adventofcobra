@@ -373,3 +373,35 @@ def s_2015_9_B(solution_input: str) -> int:
         graph[target][source] = distance
     lengths = all_complete_path_lengths(graph)
     return max(lengths)
+
+
+def look_and_say(string: str) -> str:
+    last = string[0]
+    last_count = 0
+    encoded = ""
+    for char in string:
+        if last == char:
+            last_count += 1
+        else:
+            encoded += str(last_count) + last
+            last = char
+            last_count = 1
+    encoded += str(last_count) + last
+    return encoded
+
+
+def look_and_say_multi(string: str, n: int) -> str:
+    end = string
+    for _ in range(n):
+        end = look_and_say(end)
+    return end
+
+
+@r.solution(2015, 10, Part.A)
+def s_2015_10_a(solution_input: str) -> int:
+    return len(look_and_say_multi(solution_input, 40))
+
+
+@r.solution(2015, 10, Part.B)
+def s_2015_10_b(solution_input: str) -> int:
+    return len(look_and_say_multi(solution_input, 50))
