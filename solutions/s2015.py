@@ -1,7 +1,8 @@
 from collections import defaultdict
 from hashlib import md5
+from typing import Callable
 
-from .runner import r, Part
+from .runner import r, Part, T
 
 
 def instr_to_val(instr: str) -> int:
@@ -145,3 +146,66 @@ def s_2015_5_a(solution_input: str) -> int:
 @r.solution(2015, 5, Part.B)
 def s_2015_5_b(solution_input: str) -> int:
     return sum([1 for string in solution_input.split("\n") if nice_string_b(string)])
+
+
+def light_grid(size: int, default: T) -> list[list[T]]:
+    grid = []
+    for _ in range(size):
+        grid += [[default] * size]
+    return grid
+
+
+def parse_light_cmd(cmd: str) -> tuple[str, tuple[int, int], tuple[int, int]]:
+    parts = cmd.split(" ")
+    tr = [int(pos) for pos in parts[-1].split(",")]
+    bl = [int(pos) for pos in parts[-3].split(",")]
+    action = " ".join(parts[0:2]) if len(parts) == 5 else parts[0]
+    return (action, (bl[0], bl[1]), (tr[0], tr[1]))
+
+
+def modify_grid(
+    grid: list[list[T]],
+    action: str,
+    bl: tuple[int, int],
+    tr: tuple[int, int],
+    mod_fun: Callable[[list[list[T]], str, int, int], None],
+):
+    for x in range(bl[0], tr[0] + 1):
+        for y in range(bl[1], tr[1] + 1):
+            mod_fun(grid, action, x, y)
+
+
+def toggle_mod(grid: list[list[bool]], action: str, x: int, y: int) -> None:
+    if action == "turn on":
+        grid[y][x] = True
+    elif action == "turn off":
+        grid[y][x] = False
+    else:
+        grid[y][x] = not grid[y][x]
+
+
+def var_mod(grid: list[list[int]], action: str, x: int, y: int) -> None:
+    if action == "turn on":
+        grid[y][x] += 1
+    elif action == "turn off":
+        grid[y][x] = max(0, grid[y][x] - 1)
+    else:
+        grid[y][x] += 2
+
+
+@r.solution(2015, 6, Part.A)
+def s_2015_6_a(solution_input: str) -> int:
+    grid = light_grid(1000, False)
+    for line in solution_input.split("\n"):
+        action, bl, tr = parse_light_cmd(line)
+        modify_grid(grid, action, bl, tr, toggle_mod)
+    return sum([sum([1 for cell in row if cell]) for row in grid])
+
+
+@r.solution(2015, 6, Part.B)
+def s_2015_6_b(solution_input: str) -> int:
+    grid = light_grid(1000, 0)
+    for line in solution_input.split("\n"):
+        action, bl, tr = parse_light_cmd(line)
+        modify_grid(grid, action, bl, tr, var_mod)
+    return sum([sum(row) for row in grid])
