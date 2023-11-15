@@ -1,9 +1,9 @@
 from collections import defaultdict, deque
 from copy import deepcopy
-from itertools import permutations
+from itertools import permutations, combinations
 from json import loads
 from hashlib import md5
-from typing import Any, Callable
+from typing import Any, Callable, Generator
 
 from .runner import r, Part, T
 
@@ -588,3 +588,52 @@ def s_2015_14_a(solution_input: str) -> int:
 @r.solution(2015, 14, Part.B)
 def s_2015_14_b(solution_input: str) -> int:
     return best_reindeer(solution_input, True)
+
+
+def parse_ingredient(info: str) -> tuple[str, list[tuple[str, int]]]:
+    name, attrs = info.split(":")
+    attrs_split = [attr.strip().split(" ") for attr in attrs.split(",")]
+    attrs_final = [(k, int(v)) for k, v in attrs_split]
+    return (name, attrs_final)
+
+
+def stars_and_bars(n: int, k: int) -> Generator[list[int], None, None]:
+    """Stolen from here: https://stackoverflow.com/a/28969798."""
+    for c in combinations(range(n + k - 1), k - 1):
+        yield [b - a - 1 for a, b in zip((-1,) + c, c + (n + k - 1,))]
+
+
+def max_ingredients(solution_input: str, calories: bool) -> int:
+    ingredients: defaultdict[str, dict[str, int]] = defaultdict(dict)
+    attributes = set()
+    for info in solution_input.split("\n"):
+        name, attrs = parse_ingredient(info)
+        for attr_name, attr_val in attrs:
+            ingredients[name][attr_name] = attr_val
+            attributes.add(attr_name)
+    values = {}
+    ingredient_names = sorted(ingredients.keys())
+    for split in stars_and_bars(100, len(ingredients)):
+        score = 1
+        attribute_scores: defaultdict[str, int] = defaultdict(lambda: 0)
+        for index, tbs in enumerate(split):
+            ingredient = ingredient_names[index]
+            for attribute in attributes:
+                attribute_scores[attribute] += tbs * ingredients[ingredient][attribute]
+        for attr_name, attr_score in attribute_scores.items():
+            if attr_name != "calories":
+                score *= max(attr_score, 0)
+        if calories and attribute_scores["calories"] != 500:
+            score = 0
+        values[tuple(split)] = score
+    return max(values.values())
+
+
+@r.solution(2015, 15, Part.A)
+def s_2015_15_a(solution_input: str) -> int:
+    return max_ingredients(solution_input, False)
+
+
+@r.solution(2015, 15, Part.B)
+def s_2015_15_b(solution_input: str) -> int:
+    return max_ingredients(solution_input, True)
