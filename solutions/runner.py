@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Callable, TypeVar
 
 from aocd import get_data
+from aocd.exceptions import PuzzleLockedError
 
 
 T = TypeVar("T")
@@ -31,7 +32,10 @@ class Runner:
         return register_solution
 
     def run(self, year: int, day: int, part: Part) -> None:
-        self.run_custom_input(year, day, part, self.__fetch_data(year, day))
+        try:
+            self.run_custom_input(year, day, part, self.__fetch_data(year, day))
+        except PuzzleLockedError as err:
+            print(f"Error: {err}")
 
     def run_custom_input(self, year: int, day: int, part: Part, input: str) -> None:
         solution = self.__solutions.get((year, day, part))
