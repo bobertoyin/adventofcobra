@@ -470,16 +470,14 @@ def s_2015_11_b(solution_input: str) -> str:
 
 
 def sum_json_nums(input_json: json, ignore_red: bool) -> int:
-    if type(input_json) == int:
+    if isinstance(input_json, int):
         return input_json
-    elif type(input_json) == list:
-        l: list[json] = input_json
-        return sum([sum_json_nums(item, ignore_red) for item in l])
-    elif type(input_json) == dict:
-        d: dict[str, json] = input_json
-        if ignore_red and "red" in d.values():
+    elif isinstance(input_json, list):
+        return sum([sum_json_nums(item, ignore_red) for item in input_json])
+    elif isinstance(input_json, dict):
+        if ignore_red and "red" in input_json.values():
             return 0
-        return sum([sum_json_nums(value, ignore_red) for value in d.values()])
+        return sum([sum_json_nums(value, ignore_red) for value in input_json.values()])
     else:
         return 0
 

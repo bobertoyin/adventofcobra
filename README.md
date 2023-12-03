@@ -5,6 +5,7 @@ My incredibly cursed setup and solutions for [Advent of Code](https://adventofco
 ## Usage
 
 ```console
+$ pip3 install -r requirements.txt
 $ export AOC_SESSION=a_really_long_session_token
 $ python3 main.py -h
 usage: adventofcobra [-h] year day part
@@ -25,3 +26,7 @@ Something something how Python modules are loaded? Something something how I imp
 > Why not have your auto-runner support example inputs and auto-submitting?
 
 AFAIK fetching example inputs is only supported in `advent-of-code-data` via the CLI, as oppposed to the library (which is what I'm using). [`advent-of-code-data`] *does* support auto-submitting but I chose not to use it due to the inherent time-out penalty that comes from submitting incorrect solutions.
+
+> Why is your code formatted and type annotated?
+
+I honestly don't know.
