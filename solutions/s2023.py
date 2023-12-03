@@ -1,3 +1,5 @@
+from re import compile
+
 from .runner import r, Part
 
 
@@ -86,3 +88,51 @@ def s_2023_2_a(solution_input: str) -> int:
 @r.solution(2023, 2, Part.B)
 def s_2023_2_b(solution_input: str) -> int:
     return cube_games(solution_input, False)
+
+
+def gear_ratios(solution_input: str, part_a: bool):
+    total = 0
+    gear_ratios = 0
+    regex = compile("\d+")
+    lines = solution_input.split("\n")
+    symbols: set[tuple[int, int]] = set()
+    gears: dict[tuple[int, int], list[int]] = {}
+    for row, line in enumerate(lines):
+        for col, cell in enumerate(line):
+            if (not cell.isdigit()) and cell != ".":
+                symbols.add((row, col))
+            if cell == "*":
+                gears[(row, col)] = []
+    for row, line in enumerate(lines):
+        numbers = regex.finditer(line)
+        for number in numbers:
+            value = int(number[0])
+            valid = False
+            for pos in range(*number.span()):
+                if valid:
+                    break
+                for symbol in symbols:
+                    if valid:
+                        break
+                    d_x = abs(symbol[0] - row) <= 1
+                    d_y = abs(symbol[1] - pos) <= 1
+                    adj = d_x and d_y
+                    valid = valid or adj
+                    if symbol in gears and adj:
+                        gears[symbol].append(value)
+            if valid:
+                total += value
+    for adjacent in gears.values():
+        if len(adjacent) == 2:
+            gear_ratios += adjacent[0] * adjacent[1]
+    return total if part_a else gear_ratios
+
+
+@r.solution(2023, 3, Part.A)
+def s_2023_3_a(solution_input: str):
+    return gear_ratios(solution_input, True)
+
+
+@r.solution(2023, 3, Part.B)
+def s_2023_3_b(solution_input: str):
+    return gear_ratios(solution_input, False)
