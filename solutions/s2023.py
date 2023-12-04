@@ -1,3 +1,4 @@
+from collections import deque, defaultdict
 from re import compile
 
 from .runner import r, Part
@@ -136,3 +137,40 @@ def s_2023_3_a(solution_input: str):
 @r.solution(2023, 3, Part.B)
 def s_2023_3_b(solution_input: str):
     return gear_ratios(solution_input, False)
+
+
+def scratchcards(solution_input: str, part_a: bool):
+    regex = compile("\d+")
+    total = 0
+    copy_transform = defaultdict(list)
+    copy_list: deque[int] = deque()
+    copy_final = []
+    for card in solution_input.split("\n"):
+        a, b = card.split(" | ")
+        card_info, winning = a.split(": ")
+        card_num = int(regex.search(card_info).group())
+        winning = {int(num[0]) for num in regex.finditer(winning)}
+        nums = [int(num[0]) for num in regex.finditer(b)]
+        win_nums = [num for num in nums if num in winning]
+        if len(win_nums) > 0:
+            if part_a:
+                total += 2 ** (len(win_nums) - 1)
+            else:
+                for i in range(1, len(win_nums) + 1):
+                    copy_transform[card_num].append(card_num + i)
+        copy_list.append(card_num)
+    while len(copy_list) > 0:
+        next_copy = copy_list.popleft()
+        copy_final.append(next_copy)
+        copy_list.extend(copy_transform[next_copy])
+    return total if part_a else len(copy_final)
+
+
+@r.solution(2023, 4, Part.A)
+def s_2023_4_a(solution_input: str):
+    return scratchcards(solution_input, True)
+
+
+@r.solution(2023, 4, Part.B)
+def s_2023_4_b(solution_input: str):
+    return scratchcards(solution_input, False)
