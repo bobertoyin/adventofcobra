@@ -174,3 +174,102 @@ def s_2023_4_a(solution_input: str):
 @r.solution(2023, 4, Part.B)
 def s_2023_4_b(solution_input: str):
     return scratchcards(solution_input, False)
+
+
+def day5(solution_input: str, part_a: bool):
+    seeds = []
+    mappings = {}
+    source_name = None
+    dest_name = None
+    seed_ranges = []
+    cache = defaultdict(dict)
+    locations = set()
+    for line in solution_input.split("\n"):
+        if line == "":
+            source_name = None
+            dest_name = None
+        elif line.startswith("seeds"):
+            if part_a:
+                for seed in line.split(" ")[1:]:
+                    seeds.append(int(seed))
+            else:
+                line = line.split(" ")[1:]
+                for i in range(0, len(line), 2):
+                    start = int(line[i])
+                    r = int(line[i + 1])
+                    seed_ranges.append((start, r))
+        elif "map" in line:
+            map_name = line.split(" ")[0]
+            map_name_split = map_name.split("-")
+            source_name = map_name_split[0]
+            dest_name = map_name_split[2]
+            mappings[source_name] = {"new_item": dest_name, "ranges": []}
+        else:
+            dest, source, r = [int(n) for n in line.split(" ")]
+            mappings[source_name]["ranges"].append(
+                {
+                    "source": source,
+                    "dest": dest,
+                    "range": r,
+                }
+            )
+
+    if part_a:
+        for seed in seeds:
+            if seed not in cache["seed"]:
+                item = "seed"
+                value = seed
+                while item != "location":
+                    if value not in cache[item]:
+                        ranges = mappings[item]["ranges"]
+                        item = mappings[item]["new_item"]
+                        for range_item in ranges:
+                            source = range_item["source"]
+                            dest = range_item["dest"]
+                            r = range_item["range"]
+                            if source <= value and value < source + r:
+                                new_value = dest + (value - source)
+                                cache[item][value] = new_value
+                                value = new_value
+                                break
+                    else:
+                        value = cache[item][value]
+                        item = "location"
+                cache["seed"][seed] = value
+                locations.add(value)
+    else:
+        for start, r in seed_ranges:
+            print(start, r)
+            for seed in range(start, start + r):
+                if seed not in cache["seed"]:
+                    item = "seed"
+                    value = seed
+                    while item != "location":
+                        if value not in cache[item]:
+                            ranges = mappings[item]["ranges"]
+                            item = mappings[item]["new_item"]
+                            for range_item in ranges:
+                                source = range_item["source"]
+                                dest = range_item["dest"]
+                                r = range_item["range"]
+                                if source <= value and value < source + r:
+                                    new_value = dest + (value - source)
+                                    cache[item][value] = new_value
+                                    value = new_value
+                                    break
+                        else:
+                            value = cache[item][value]
+                            item = "location"
+                    cache["seed"][seed] = value
+                    locations.add(value)
+    return min(locations)
+
+
+@r.solution(2023, 5, Part.A)
+def s_2023_5_a(solution_input: str):
+    return day5(solution_input, True)
+
+
+@r.solution(2023, 5, Part.B)
+def s_2023_5_b(solution_input: str):
+    return day5(solution_input, False)
