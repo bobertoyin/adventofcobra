@@ -176,7 +176,7 @@ def s_2023_4_b(solution_input: str):
     return scratchcards(solution_input, False)
 
 
-def day5(solution_input: str, part_a: bool):
+def fertilize_seeds(solution_input: str, part_a: bool) -> int:
     seeds = []
     mappings = {}
     source_name = None
@@ -262,10 +262,10 @@ def day5(solution_input: str, part_a: bool):
 
 
 @r.solution(2023, 5, Part.A)
-def s_2023_5_a(solution_input: str):
-    return day5(solution_input, True)
+def s_2023_5_a(solution_input: str) -> int:
+    return fertilize_seeds(solution_input, True)
 
 
 @r.solution(2023, 5, Part.B)
-def s_2023_5_b(solution_input: str):
-    return day5(solution_input, False)
+def s_2023_5_b(solution_input: str) -> int:
+    return fertilize_seeds(solution_input, False)
