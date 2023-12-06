@@ -271,7 +271,7 @@ def s_2023_5_b(solution_input: str) -> int:
     return fertilize_seeds(solution_input, False)
 
 
-def day6(solution_input: str, part_a: bool) -> int:
+def ferry_race(solution_input: str, part_a: bool) -> int:
     times = []
     distances = []
     ways = 1
@@ -300,9 +300,9 @@ def day6(solution_input: str, part_a: bool) -> int:
 
 @r.solution(2023, 6, Part.A)
 def s_2023_6_a(solution_input: str) -> int:
-    return day6(solution_input, True)
+    return ferry_race(solution_input, True)
 
 
 @r.solution(2023, 6, Part.B)
 def s_2023_6_b(solution_input: str) -> int:
-    return day6(solution_input, False)
+    return ferry_race(solution_input, False)
