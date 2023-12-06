@@ -269,3 +269,40 @@ def s_2023_5_a(solution_input: str) -> int:
 @r.solution(2023, 5, Part.B)
 def s_2023_5_b(solution_input: str) -> int:
     return fertilize_seeds(solution_input, False)
+
+
+def day6(solution_input: str, part_a: bool) -> int:
+    times = []
+    distances = []
+    ways = 1
+    num_re = compile("\d+")
+    for line in solution_input.split("\n"):
+        if "Time" in line:
+            if part_a:
+                times += [int(n[0]) for n in num_re.finditer(line)]
+            else:
+                times.append(int("".join([n[0] for n in num_re.finditer(line)])))
+        else:
+            if part_a:
+                distances += [int(n[0]) for n in num_re.finditer(line)]
+            else:
+                distances.append(int("".join([n[0] for n in num_re.finditer(line)])))
+    races = zip(times, distances)
+    for time, record in races:
+        race_ways = 0
+        for hold in range(0, time + 1):
+            distance = (time - hold) * hold
+            if distance > record:
+                race_ways += 1
+        ways *= race_ways
+    return ways
+
+
+@r.solution(2023, 6, Part.A)
+def s_2023_6_a(solution_input: str) -> int:
+    return day6(solution_input, True)
+
+
+@r.solution(2023, 6, Part.B)
+def s_2023_6_b(solution_input: str) -> int:
+    return day6(solution_input, False)
