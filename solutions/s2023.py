@@ -204,6 +204,9 @@ def day5(solution_input: str, part_a: bool):
             source_name = map_name_split[0]
             dest_name = map_name_split[2]
             mappings[source_name] = {"new_item": dest_name, "ranges": []}
+            for item in mappings:
+                if mappings[item]["new_item"] == source_name:
+                    mappings[source_name]["old_item"] = item
         else:
             dest, source, r = [int(n) for n in line.split(" ")]
             mappings[source_name]["ranges"].append(
@@ -237,32 +240,25 @@ def day5(solution_input: str, part_a: bool):
                         item = "location"
                 cache["seed"][seed] = value
                 locations.add(value)
+        return min(locations)
     else:
-        for start, r in seed_ranges:
-            print(start, r)
-            for seed in range(start, start + r):
-                if seed not in cache["seed"]:
-                    item = "seed"
-                    value = seed
-                    while item != "location":
-                        if value not in cache[item]:
-                            ranges = mappings[item]["ranges"]
-                            item = mappings[item]["new_item"]
-                            for range_item in ranges:
-                                source = range_item["source"]
-                                dest = range_item["dest"]
-                                r = range_item["range"]
-                                if source <= value and value < source + r:
-                                    new_value = dest + (value - source)
-                                    cache[item][value] = new_value
-                                    value = new_value
-                                    break
-                        else:
-                            value = cache[item][value]
-                            item = "location"
-                    cache["seed"][seed] = value
-                    locations.add(value)
-    return min(locations)
+        location = 0
+        while True:
+            value = location
+            item = "humidity"
+            while item is not None:
+                for range_item in mappings[item]["ranges"]:
+                    source = range_item["source"]
+                    dest = range_item["dest"]
+                    r = range_item["range"]
+                    if dest <= value and value < dest + r:
+                        value = source + (value - dest)
+                        break
+                item = mappings[item].get("old_item")
+            for start, length in seed_ranges:
+                if start <= value and value < start + length:
+                    return location
+            location += 1
 
 
 @r.solution(2023, 5, Part.A)
