@@ -1,4 +1,4 @@
-from collections import deque, defaultdict
+from collections import deque, defaultdict, Counter
 from re import compile
 
 from .runner import r, Part
@@ -306,3 +306,81 @@ def s_2023_6_a(solution_input: str) -> int:
 @r.solution(2023, 6, Part.B)
 def s_2023_6_b(solution_input: str) -> int:
     return ferry_race(solution_input, False)
+
+
+def camel_cards(solution_input: str, part_a: bool):
+    kinds = {
+        1: [],
+        2: [],
+        3: [],
+        4: [],
+        5: [],
+        6: [],
+        7: [],
+    }
+    rankings = []
+    for l in solution_input.split("\n"):
+        hand, bid = l.split(" ")
+        bid = int(bid)
+        cards = Counter(hand)
+        replace = None
+        for card in sorted(
+            cards, key=lambda c: (cards[c], card_strength(c, part_a)), reverse=True
+        ):
+            if card != "J":
+                replace = card
+                break
+        if replace and not part_a:
+            new_hand = hand.replace("J", replace)
+            cards = Counter(new_hand)
+        a = cards.most_common(1)[0]
+        t = ""
+        if a[1] == 5:
+            t = 1
+        elif a[1] == 4:
+            t = 2
+        else:
+            a, b = cards.most_common(2)
+            if a[1] == 3 and b[1] == 2:
+                t = 3
+            elif a[1] == 3 and b[1] == 1:
+                t = 4
+            elif a[1] == 2 and b[1] == 2:
+                t = 5
+            elif a[1] == 2:
+                t = 6
+            else:
+                t = 7
+        kinds[t].append((hand, bid))
+    for kind in sorted(kinds.keys(), reverse=True):
+        for duo in sorted(kinds[kind], key=lambda p: hand_strength(p[0], part_a)):
+            rankings.append(duo)
+    return sum([(index + 1) * duo[1] for index, duo in enumerate(rankings)])
+
+
+def hand_strength(hand: str, part_a: bool) -> list[int]:
+    return [card_strength(card, part_a) for card in hand]
+
+
+def card_strength(card: str, part_a: bool) -> int:
+    values = {
+        "A": 14,
+        "K": 13,
+        "Q": 12,
+        "J": 11 if part_a else 1,
+        "T": 10,
+    }
+    if card.isnumeric():
+        return int(card)
+    else:
+        return values[card]
+
+
+@r.solution(2023, 7, Part.A)
+def s_2023_7_a(solution_input: str):
+    return camel_cards(solution_input, True)
+
+
+@r.solution(2023, 7, Part.B)
+def s_2023_7_b(solution_input: str):
+    return camel_cards(solution_input, False)
