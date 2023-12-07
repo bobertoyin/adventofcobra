@@ -308,7 +308,7 @@ def s_2023_6_b(solution_input: str) -> int:
     return ferry_race(solution_input, False)
 
 
-def camel_cards(solution_input: str, part_a: bool):
+def camel_cards(solution_input: str, part_a: bool) -> int:
     kinds = {
         1: [],
         2: [],
@@ -377,10 +377,10 @@ def card_strength(card: str, part_a: bool) -> int:
 
 
 @r.solution(2023, 7, Part.A)
-def s_2023_7_a(solution_input: str):
+def s_2023_7_a(solution_input: str) -> int:
     return camel_cards(solution_input, True)
 
 
 @r.solution(2023, 7, Part.B)
-def s_2023_7_b(solution_input: str):
+def s_2023_7_b(solution_input: str) -> int:
     return camel_cards(solution_input, False)
