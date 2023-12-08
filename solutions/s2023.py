@@ -1,4 +1,5 @@
 from collections import deque, defaultdict, Counter
+from math import lcm
 from re import compile
 
 from .runner import r, Part
@@ -384,3 +385,52 @@ def s_2023_7_a(solution_input: str) -> int:
 @r.solution(2023, 7, Part.B)
 def s_2023_7_b(solution_input: str) -> int:
     return camel_cards(solution_input, False)
+
+
+def traverse_wasteland(solution_input: str, part_a: bool) -> int:
+    instructions = []
+    network = {}
+    for i, l in enumerate(solution_input.split("\n")):
+        if i == 0:
+            instructions += list(l)
+        elif "=" in l:
+            src, choice = l.split(" = ")
+            network[src] = tuple(choice.replace("(", "").replace(")", "").split(", "))
+    if part_a:
+        location = "AAA"
+        steps = 0
+        current_instr = 0
+        while location != "ZZZ":
+            location = network[location][0 if instructions[current_instr] == "L" else 1]
+            if current_instr == len(instructions) - 1:
+                current_instr = 0
+            else:
+                current_instr += 1
+            steps += 1
+        return steps
+    else:
+        locations = [n for n in network if n.endswith("A")]
+        steps = []
+        for l in locations:
+            loc = l
+            step = 0
+            current_instr = 0
+            while not loc.endswith("Z"):
+                loc = network[loc][0 if instructions[current_instr] == "L" else 1]
+                if current_instr == len(instructions) - 1:
+                    current_instr = 0
+                else:
+                    current_instr += 1
+                step += 1
+            steps.append(step)
+        return lcm(*steps)
+
+
+@r.solution(2023, 8, Part.A)
+def s_2023_8_a(solution_input: str) -> int:
+    return traverse_wasteland(solution_input, True)
+
+
+@r.solution(2023, 8, Part.B)
+def s_2023_8_b(solution_input: str) -> int:
+    return traverse_wasteland(solution_input, False)
