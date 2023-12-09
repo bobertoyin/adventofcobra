@@ -434,3 +434,48 @@ def s_2023_8_a(solution_input: str) -> int:
 @r.solution(2023, 8, Part.B)
 def s_2023_8_b(solution_input: str) -> int:
     return traverse_wasteland(solution_input, False)
+
+
+def oasis_history(solution_input: str, part_a: bool) -> int:
+    total = 0
+    for l in solution_input.split("\n"):
+        histories = []
+        histories.append([int(n) for n in l.split(" ")])
+        while True:
+            last_history = histories[-1]
+            next_history = [
+                last_history[i + 1] - last_history[i]
+                for i in range(len(last_history) - 1)
+            ]
+            histories.append(next_history)
+            if sum(next_history) == 0 and len(set(next_history)) == 1:
+                break
+        new_histories = []
+        for history in reversed(histories):
+            new_history = history
+            if len(new_histories) > 0:
+                new_val = history[-1 if part_a else 0]
+                if part_a:
+                    new_val += new_histories[-1][-1]
+                    new_history.append(new_val)
+                else:
+                    new_val -= new_histories[-1][0]
+                    new_history = [new_val] + new_history
+            else:
+                if part_a:
+                    new_history.append(0)
+                else:
+                    new_history = [0] + new_history
+            new_histories.append(new_history)
+        total += new_histories[-1][-1 if part_a else 0]
+    return total
+
+
+@r.solution(2023, 9, Part.A)
+def s_2023_9_a(solution_input: str) -> int:
+    return oasis_history(solution_input, True)
+
+
+@r.solution(2023, 9, Part.B)
+def s_2023_9_b(solution_input: str) -> int:
+    return oasis_history(solution_input, False)
