@@ -479,3 +479,87 @@ def s_2023_9_a(solution_input: str) -> int:
 @r.solution(2023, 9, Part.B)
 def s_2023_9_b(solution_input: str) -> int:
     return oasis_history(solution_input, False)
+
+
+def pipe_maze(solution_input: str, part_a: bool) -> int:
+    grid = [list(l) for l in solution_input.split("\n")]
+    for r_i, row in enumerate(grid):
+        for c_i, cell in enumerate(row):
+            if cell == "S":
+                start = (r_i, c_i)
+    left = grid[start[0]][start[1] - 1] in ["-", "L", "F"]
+    right = grid[start[0]][start[1] + 1] in ["-", "J", "7"]
+    top = grid[start[0] - 1][start[1]] in ["|", "F", "7"]
+    bottom = grid[start[0] - 1][start[1]] in ["|", "L", "J"]
+    if left and right:
+        start_piece = "-"
+    elif top and bottom:
+        start_piece = "|"
+    elif left and top:
+        start_piece = "J"
+    elif left and bottom:
+        start_piece = "7"
+    elif right and top:
+        start_piece = "L"
+    else:
+        start_piece = "F"
+    grid[start[0]][start[1]] = start_piece
+    visited = {start: 0}
+    horizon = deque([start])
+    while len(horizon) > 0:
+        r, c = horizon.popleft()
+        neighbors = []
+        pipe = grid[r][c]
+        if pipe == "-":
+            neighbors += [(r, c - 1), (r, c + 1)]
+        elif pipe == "|":
+            neighbors += [(r - 1, c), (r + 1, c)]
+        elif pipe == "L":
+            neighbors += [(r - 1, c), (r, c + 1)]
+        elif pipe == "J":
+            neighbors += [(r - 1, c), (r, c - 1)]
+        elif pipe == "F":
+            neighbors += [(r + 1, c), (r, c + 1)]
+        elif pipe == "7":
+            neighbors += [(r + 1, c), (r, c - 1)]
+        for neighbor in neighbors:
+            r_n, c_n = neighbor
+            if (
+                len(grid) > r_n
+                and r_n >= 0
+                and len(grid[r_n]) > c_n
+                and c_n >= 0
+                and neighbor not in visited
+            ):
+                visited[neighbor] = visited[(r, c)] + 1
+                horizon.append(neighbor)
+    if part_a:
+        return max(visited.values())
+    else:
+        count = 0
+        for r in range(len(grid)):
+            for c in range(len(grid[r])):
+                if (r, c) not in visited:
+                    x_ray = (r - c, 0)
+                    edges = 0
+                    while x_ray != (r, c):
+                        if x_ray in visited:
+                            pipe = grid[x_ray[0]][x_ray[1]]
+                            if pipe in ["7", "L"]:
+                                edges += 2
+                            else:
+                                edges += 1
+                        x_ray = (x_ray[0] + 1, x_ray[1] + 1)
+                    if edges % 2 == 1:
+                        count += 1
+        return count
+
+
+@r.solution(2023, 10, Part.A)
+def s_2023_10_a(solution_input: str) -> int:
+    return pipe_maze(solution_input, True)
+
+
+@r.solution(2023, 10, Part.B)
+def s_2023_10_b(solution_input: str) -> int:
+    return pipe_maze(solution_input, False)
