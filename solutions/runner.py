@@ -9,8 +9,8 @@ T = TypeVar("T")
 
 
 class Part(Enum):
-    A = "A"
-    B = "B"
+    A = "a"
+    B = "b"
 
 
 class Runner:
