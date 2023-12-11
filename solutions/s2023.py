@@ -1,4 +1,5 @@
 from collections import deque, defaultdict, Counter
+from itertools import combinations
 from math import lcm
 from re import compile
 
@@ -525,10 +526,8 @@ def pipe_maze(solution_input: str, part_a: bool) -> int:
         for neighbor in neighbors:
             r_n, c_n = neighbor
             if (
-                len(grid) > r_n
-                and r_n >= 0
-                and len(grid[r_n]) > c_n
-                and c_n >= 0
+                len(grid) > r_n >= 0
+                and len(grid[r_n]) > c_n >= 0
                 and neighbor not in visited
             ):
                 visited[neighbor] = visited[(r, c)] + 1
@@ -563,3 +562,69 @@ def s_2023_10_a(solution_input: str) -> int:
 @r.solution(2023, 10, Part.B)
 def s_2023_10_b(solution_input: str) -> int:
     return pipe_maze(solution_input, False)
+
+
+def cosmic_expansion(solution_input: str, part_a: bool) -> int:
+    grid = [list(l) for l in solution_input.split("\n")]
+    expanded_rows = []
+    expanded = []
+    for row in grid:
+        if "#" not in row:
+            expanded_rows.append(["x" for _ in row])
+        else:
+            expanded_rows.append(row)
+    cols = set()
+    for c in range(len(grid[0])):
+        col = [row[c] for row in grid]
+        if "#" not in col:
+            cols.add(c)
+    for row in expanded_rows:
+        new_row = []
+        for i, c in enumerate(row):
+            if i in cols:
+                new_row.append("x")
+            else:
+                new_row.append(c)
+        expanded.append(new_row)
+    galaxies = set()
+    for r_i, r in enumerate(expanded):
+        for c_i, c in enumerate(r):
+            if c == "#":
+                galaxies.add((r_i, c_i))
+    total = 0
+    pairs = set(combinations(galaxies, 2))
+    grow = 2 if part_a else 1_000_000
+    for src in galaxies:
+        visited = {src: 0}
+        horizon = deque([src])
+        while len(horizon) > 0:
+            r, c = horizon.popleft()
+            neighbors = []
+            if r > 0:
+                neighbors.append((r - 1, c))
+            if r < len(expanded) - 1:
+                neighbors.append((r + 1, c))
+            if c > 0:
+                neighbors.append((r, c - 1))
+            if c < len(expanded[r]) - 1:
+                neighbors.append((r, c + 1))
+            for n in neighbors:
+                if n not in visited:
+                    visited[n] = visited[(r, c)] + (
+                        grow if expanded[n[0]][n[1]] == "x" else 1
+                    )
+                    horizon.append(n)
+        for tgt in galaxies:
+            if (src, tgt) in pairs:
+                total += visited[tgt]
+    return total
+
+
+@r.solution(2023, 11, Part.A)
+def s_2023_11_a(solution_input: str) -> int:
+    return cosmic_expansion(solution_input, True)
+
+
+@r.solution(2023, 11, Part.B)
+def s_2023_11_b(solution_input: str) -> int:
+    return cosmic_expansion(solution_input, False)
