@@ -631,9 +631,11 @@ def s_2023_11_b(solution_input: str) -> int:
 
 
 def day12(solution_input: str, part_a: bool) -> int:
+
     a_counts = []
     b_counts = []
-    for l in solution_input.split("\n"):
+    for i, l in enumerate(solution_input.split("\n")):
+        print(i)
         springs, condition = l.split(" ")
         condition = [int(n) for n in condition.split(",")]
         a_counts.append(count(springs, condition))
@@ -647,19 +649,32 @@ def day12(solution_input: str, part_a: bool) -> int:
         return sum([a * (b // a) ** 4 for a, b in zip(a_counts, b_counts)])
 
 
-def count(springs, condition) -> int:
+def count(springs: str, condition: list[int]) -> int:
     unknowns = [i for i, n in enumerate(springs) if n == "?"]
-    patterns = set()
-    for num_op in range(0, len(unknowns) + 1):
-        operationals = set(combinations(unknowns, num_op))
-        for ops in operationals:
-            known = list(springs)
-            for i in ops:
-                known[i] = "."
-            known = "".join(known).replace("?", "#")
-            if [len(part) for part in known.split(".") if part != ""] == condition:
-                patterns.add(known)
-    return len(patterns)
+    knowns = [i for i, n in enumerate(springs) if n == "#"]
+    needed = sum(condition) - springs.count("#")
+    count = 0
+    for b in combinations(unknowns, needed):
+        assumption = sorted(knowns + list(b))
+        start = 0
+        chunks = []
+        for c in condition:
+            chunk = assumption[start:start + c]
+            start += c
+            chunks.append(chunk)
+        works = True
+        for i, chunk in enumerate(chunks):
+            for sub_i, c in enumerate(chunk):
+                if sub_i > 0 and c - chunk[sub_i - 1] != 1:
+                    works = False
+                    break
+            if i > 0 and chunk[0] - chunks[i - 1][-1] <= 1:
+                works = False
+            if not works:
+                break
+        if works:
+            count += 1
+    return count
 
 
 @r.solution(2023, 12, Part.A)
