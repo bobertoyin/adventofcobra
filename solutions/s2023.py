@@ -1,4 +1,5 @@
 from collections import deque, defaultdict, Counter
+from functools import cache
 from itertools import combinations
 from math import lcm
 from re import compile
@@ -630,58 +631,53 @@ def s_2023_11_b(solution_input: str) -> int:
     return cosmic_expansion(solution_input, False)
 
 
-def day12(solution_input: str, part_a: bool) -> int:
-
-    a_counts = []
-    b_counts = []
-    for i, l in enumerate(solution_input.split("\n")):
-        print(i)
+def hot_springs(solution_input: str, part_a: bool) -> int:
+    counts = []
+    for l in solution_input.split("\n"):
         springs, condition = l.split(" ")
         condition = [int(n) for n in condition.split(",")]
-        a_counts.append(count(springs, condition))
-        if not part_a:
-            expanded_springs = "?".join([springs] * 2)
-            expanded_condition = condition * 2
-            b_counts.append(count(expanded_springs, expanded_condition))
-    if part_a:
-        return sum(a_counts)
+        if part_a:
+            counts.append(eval_springs(springs, "", tuple(condition)))
+        else:
+            expanded_springs = "?".join([springs] * 5)
+            expanded_condition = condition * 5
+            counts.append(eval_springs(expanded_springs, "", tuple(expanded_condition)))
+    return sum(counts)
+
+
+@cache
+def eval_springs(springs: str, last: str, conditions: tuple[int]) -> int:
+    if len(springs) == 0:
+        return sum(conditions) == 0
     else:
-        return sum([a * (b // a) ** 4 for a, b in zip(a_counts, b_counts)])
-
-
-def count(springs: str, condition: list[int]) -> int:
-    unknowns = [i for i, n in enumerate(springs) if n == "?"]
-    knowns = [i for i, n in enumerate(springs) if n == "#"]
-    needed = sum(condition) - springs.count("#")
-    count = 0
-    for b in combinations(unknowns, needed):
-        assumption = sorted(knowns + list(b))
-        start = 0
-        chunks = []
-        for c in condition:
-            chunk = assumption[start:start + c]
-            start += c
-            chunks.append(chunk)
-        works = True
-        for i, chunk in enumerate(chunks):
-            for sub_i, c in enumerate(chunk):
-                if sub_i > 0 and c - chunk[sub_i - 1] != 1:
-                    works = False
-                    break
-            if i > 0 and chunk[0] - chunks[i - 1][-1] <= 1:
-                works = False
-            if not works:
-                break
-        if works:
-            count += 1
-    return count
+        spring = springs[0]
+        rest = springs[1 : len(springs)]
+        if spring == ".":
+            if last != "#":
+                return eval_springs(rest, spring, conditions)
+            else:
+                if conditions[0] != 0:
+                    return 0
+                return eval_springs(rest, spring, conditions[1 : len(conditions)])
+        elif spring == "#":
+            if len(conditions) == 0:
+                return 0
+            condition = conditions[0]
+            rest_conditions = list(conditions[1 : len(conditions)])
+            if condition == 0:
+                return 0
+            return eval_springs(rest, spring, tuple([condition - 1] + rest_conditions))
+        else:
+            return eval_springs(
+                springs.replace("?", "#", 1), last, conditions
+            ) + eval_springs(springs.replace("?", ".", 1), last, conditions)
 
 
 @r.solution(2023, 12, Part.A)
 def s_2023_12_a(solution_input: str) -> int:
-    return day12(solution_input, True)
+    return hot_springs(solution_input, True)
 
 
 @r.solution(2023, 12, Part.B)
 def s_2023_12_b(solution_input: str) -> int:
-    return day12(solution_input, False)
+    return hot_springs(solution_input, False)
