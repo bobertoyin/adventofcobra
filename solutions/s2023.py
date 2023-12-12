@@ -628,3 +628,45 @@ def s_2023_11_a(solution_input: str) -> int:
 @r.solution(2023, 11, Part.B)
 def s_2023_11_b(solution_input: str) -> int:
     return cosmic_expansion(solution_input, False)
+
+
+def day12(solution_input: str, part_a: bool) -> int:
+    a_counts = []
+    b_counts = []
+    for l in solution_input.split("\n"):
+        springs, condition = l.split(" ")
+        condition = [int(n) for n in condition.split(",")]
+        a_counts.append(count(springs, condition))
+        if not part_a:
+            expanded_springs = "?".join([springs] * 2)
+            expanded_condition = condition * 2
+            b_counts.append(count(expanded_springs, expanded_condition))
+    if part_a:
+        return sum(a_counts)
+    else:
+        return sum([a * (b // a) ** 4 for a, b in zip(a_counts, b_counts)])
+
+
+def count(springs, condition) -> int:
+    unknowns = [i for i, n in enumerate(springs) if n == "?"]
+    patterns = set()
+    for num_op in range(0, len(unknowns) + 1):
+        operationals = set(combinations(unknowns, num_op))
+        for ops in operationals:
+            known = list(springs)
+            for i in ops:
+                known[i] = "."
+            known = "".join(known).replace("?", "#")
+            if [len(part) for part in known.split(".") if part != ""] == condition:
+                patterns.add(known)
+    return len(patterns)
+
+
+@r.solution(2023, 12, Part.A)
+def s_2023_12_a(solution_input: str) -> int:
+    return day12(solution_input, True)
+
+
+@r.solution(2023, 12, Part.B)
+def s_2023_12_b(solution_input: str) -> int:
+    return day12(solution_input, False)
