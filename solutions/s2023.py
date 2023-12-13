@@ -3,6 +3,7 @@ from functools import cache
 from itertools import combinations
 from math import lcm
 from re import compile
+from typing import Callable
 
 from .runner import r, Part
 
@@ -681,3 +682,84 @@ def s_2023_12_a(solution_input: str) -> int:
 @r.solution(2023, 12, Part.B)
 def s_2023_12_b(solution_input: str) -> int:
     return hot_springs(solution_input, False)
+
+
+def lava_island_reflections(solution_input: str, part_a: bool) -> int:
+    grids = [[]]
+    scores = {}
+    for l in solution_input.split("\n"):
+        if l == "":
+            grids[-1].pop()
+            grids.append([])
+        else:
+            grids[-1].append(list("x".join(list(l))))
+            grids[-1].append(["x"] * len(grids[-1][-1]))
+    grids[-1].pop()
+    for i, grid in enumerate(grids):
+        if part_a:
+            score = grid_reflection(grid, reflects)
+            if score:
+                scores[i] = score
+        else:
+            score = grid_reflection(grid, diff_count)
+            if score:
+                scores[i] = score
+    return sum(scores.values())
+
+
+def grid_reflection(
+    grid: list[list[str]], func: Callable[[list[list[str]], int], bool]
+) -> int | None:
+    pos = [i for i, c in enumerate(grid[0]) if c == "x"]
+    reflects_x = False
+    for p in pos:
+        reflects_x = func(grid, p)
+        if reflects_x:
+            return len("".join(grid[0][0:p]).replace("x", ""))
+    if not reflects_x:
+        rotated = [[row[c_num] for row in grid] for c_num in range(len(grid[0]))]
+        pos = [i for i, c in enumerate(rotated[0]) if c == "x"]
+        reflects_y = False
+        for p in pos:
+            reflects_y = func(rotated, p)
+            if reflects_y:
+                return len("".join(rotated[0][0:p]).replace("x", "")) * 100
+
+
+def diff_count(grid: list[list[str]], p: int) -> bool:
+    differences = 0
+    left = p - 1
+    right = p + 1
+    while left >= 0 and right < len(grid[0]) and differences < 2:
+        col_left = [row[left] for row in grid]
+        col_right = [row[right] for row in grid]
+        for l, r in zip(col_left, col_right):
+            if l != r:
+                differences += 1
+        left -= 1
+        right += 1
+    return differences == 1
+
+
+def reflects(grid: list[list[str]], p: int) -> bool:
+    for row in grid:
+        left = p - 1
+        right = p + 1
+        while left >= 0 and right < len(row):
+            col_left = [row[left] for row in grid]
+            col_right = [row[right] for row in grid]
+            if col_left != col_right:
+                return False
+            left -= 1
+            right += 1
+    return True
+
+
+@r.solution(2023, 13, Part.A)
+def s_2023_13_a(solution_input: str) -> int:
+    return lava_island_reflections(solution_input, True)
+
+
+@r.solution(2023, 13, Part.B)
+def s_2023_13_b(solution_input: str) -> int:
+    return lava_island_reflections(solution_input, False)
