@@ -763,3 +763,91 @@ def s_2023_13_a(solution_input: str) -> int:
 @r.solution(2023, 13, Part.B)
 def s_2023_13_b(solution_input: str) -> int:
     return lava_island_reflections(solution_input, False)
+
+
+def reflector_dish(solution_input: str, part_a: bool) -> int:
+    total = 0
+    grid = [list(l) for l in solution_input.split("\n")]
+    if part_a:
+        rolled = roll(tuplify_grid(grid), -1, True)
+    else:
+        repeated = {}
+        rolled = grid
+        cycles = 1_000_000_000
+        repeat = 0
+        current = 0
+        for i in range(cycles):
+            rolled = roll(tuplify_grid(rolled), -1, True)
+            rolled = roll(tuplify_grid(rolled), -1, False)
+            rolled = roll(tuplify_grid(rolled), 1, True)
+            rolled = roll(tuplify_grid(rolled), 1, False)
+            if tuplify_grid(rolled) in repeated:
+                repeat = i - repeated[tuplify_grid(rolled)]
+                current = i + 1
+                break
+            else:
+                repeated[tuplify_grid(rolled)] = i
+        remainder = (cycles - current) % repeat
+        for i in range(remainder):
+            rolled = roll(tuplify_grid(rolled), -1, True)
+            rolled = roll(tuplify_grid(rolled), -1, False)
+            rolled = roll(tuplify_grid(rolled), 1, True)
+            rolled = roll(tuplify_grid(rolled), 1, False)
+    for r, row in enumerate(rolled):
+        for cell in row:
+            if cell == "O":
+                total += len(rolled) - r
+    return total
+
+
+def tuplify_grid(grid: list[list[str]]) -> tuple[tuple[str]]:
+    return tuple([tuple(list(l)) for l in grid])
+
+
+@cache
+def roll(grid: tuple[tuple[str]], magnitude: int, vert: bool) -> list[list[str]]:
+    rolled = [[c for c in r] for r in grid]
+    for r, row in enumerate(rolled):
+        for c, cell in enumerate(row):
+            if cell == "O":
+                if vert:
+                    current_r = r
+                    best_r = r
+                    while (
+                        (0 if magnitude == -1 else -1)
+                        < current_r
+                        < len(rolled) - (1 if magnitude == 1 else 0)
+                    ):
+                        current_r += magnitude
+                        if rolled[current_r][c] == "#":
+                            break
+                        if rolled[current_r][c] == ".":
+                            best_r = current_r
+                    rolled[r][c] = "."
+                    rolled[best_r][c] = "O"
+                else:
+                    current_c = c
+                    best_c = c
+                    while (
+                        (0 if magnitude == -1 else -1)
+                        < current_c
+                        < len(rolled[r]) - (1 if magnitude == 1 else 0)
+                    ):
+                        current_c += magnitude
+                        if rolled[r][current_c] == "#":
+                            break
+                        if rolled[r][current_c] == ".":
+                            best_c = current_c
+                    rolled[r][c] = "."
+                    rolled[r][best_c] = "O"
+    return rolled
+
+
+@r.solution(2023, 14, Part.A)
+def s_2023_14_a(solution_input: str) -> int:
+    return reflector_dish(solution_input, True)
+
+
+@r.solution(2023, 14, Part.B)
+def s_2023_14_b(solution_input: str) -> int:
+    return reflector_dish(solution_input, False)
