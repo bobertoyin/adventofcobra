@@ -1,7 +1,7 @@
 from collections import deque, defaultdict, Counter
 from functools import cache
 from itertools import combinations
-from math import lcm
+from math import lcm, prod
 from re import compile
 from typing import Callable
 
@@ -851,3 +851,54 @@ def s_2023_14_a(solution_input: str) -> int:
 @r.solution(2023, 14, Part.B)
 def s_2023_14_b(solution_input: str) -> int:
     return reflector_dish(solution_input, False)
+
+
+def lenses(solution_input: str, part_a: bool):
+    inputs = solution_input.strip().split(",")
+    if part_a:
+        return sum([hash_alg(i) for i in inputs])
+    else:
+        return hash_map(inputs)
+
+
+def hash_map(inputs: list[str]) -> int:
+    boxes = {i: [] for i in range(256)}
+    sets = {}
+    values = {}
+    for i in inputs:
+        if "=" in i:
+            label, value = i.split("=")
+            box = hash_alg(label)
+            value = int(value)
+            sets[label] = box
+            if label not in boxes[box]:
+                boxes[box].append(label)
+            values[label] = value
+        else:
+            label = i.split("-")[0]
+            if label in sets and label in boxes[sets[label]]:
+                boxes[sets[label]].remove(label)
+    power = 0
+    for b, box in boxes.items():
+        for s, slot in enumerate(box):
+            power += (b + 1) * (s + 1) * values[slot]
+    return power
+
+
+def hash_alg(string: str) -> int:
+    current = 0
+    for char in string:
+        current += ord(char)
+        current *= 17
+        current %= 256
+    return current
+
+
+@r.solution(2023, 15, Part.A)
+def s_2023_15_a(solution_input: str):
+    return lenses(solution_input, True)
+
+
+@r.solution(2023, 15, Part.B)
+def s_2023_15_b(solution_input: str):
+    return lenses(solution_input, False)
