@@ -1,7 +1,7 @@
 from collections import deque, defaultdict, Counter
 from functools import cache
 from itertools import combinations
-from math import lcm, prod
+from math import lcm
 from re import compile
 from typing import Callable
 
@@ -902,3 +902,91 @@ def s_2023_15_a(solution_input: str):
 @r.solution(2023, 15, Part.B)
 def s_2023_15_b(solution_input: str):
     return lenses(solution_input, False)
+
+
+def light_beams(solution_input: str, part_a: bool) -> int:
+    grid = [list(l) for l in solution_input.split("\n")]
+    if part_a:
+        return calc_rays(grid, ((0, 0), (0, 1)))
+    else:
+        best = 0
+        for r in range(len(grid)):
+            for c in range(len(grid[r])):
+                if r == 0 or c == 0 or r == len(grid) - 1 or c == len(grid) - 1:
+                    for vec in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+                        score = calc_rays(grid, ((r, c), vec))
+                        if score > best:
+                            best = score
+        return best
+
+
+def calc_rays(
+    grid: list[list[str]], start: tuple[tuple[int, int], tuple[int, int]]
+) -> int:
+    rays = deque()
+    energy = defaultdict(set)
+    rays.append(start)
+    while len(rays) > 0:
+        pos, vec = rays.popleft()
+        if 0 <= pos[0] < len(grid) and 0 <= pos[1] < len(grid[pos[0]]):
+            energy[pos].add(vec)
+            tile = grid[pos[0]][pos[1]]
+            if tile == "/":
+                next_vec = (vec[1] * -1, vec[0] * -1)
+                next_pos = (pos[0] + next_vec[0], pos[1] + next_vec[1])
+                if next_vec not in energy[next_pos]:
+                    rays.append((next_pos, next_vec))
+            elif tile == "\\":
+                next_vec = (vec[1], vec[0])
+                next_pos = (pos[0] + next_vec[0], pos[1] + next_vec[1])
+                if next_vec not in energy[next_pos]:
+                    rays.append((next_pos, next_vec))
+            elif tile == "|":
+                if vec[1] == 0:
+                    next_pos = (pos[0] + vec[0], pos[1] + vec[1])
+                    if vec not in energy[next_pos]:
+                        rays.append((next_pos, vec))
+                else:
+                    p_1 = (pos[0] + 1, pos[1])
+                    v_1 = (1, 0)
+                    p_2 = (pos[0] - 1, pos[1])
+                    v_2 = (-1, 0)
+                    if v_1 not in energy[p_1]:
+                        rays.append((p_1, v_1))
+                    if v_2 not in energy[p_2]:
+                        rays.append((p_2, v_2))
+            elif tile == "-":
+                if vec[0] == 0:
+                    next_pos = (pos[0] + vec[0], pos[1] + vec[1])
+                    if vec not in energy[next_pos]:
+                        rays.append((next_pos, vec))
+                else:
+                    p_1 = (pos[0], pos[1] + 1)
+                    v_1 = (0, 1)
+                    p_2 = (pos[0], pos[1] - 1)
+                    v_2 = (0, -1)
+                    if v_1 not in energy[p_1]:
+                        rays.append((p_1, v_1))
+                    if v_2 not in energy[p_2]:
+                        rays.append((p_2, v_2))
+            else:
+                next_pos = (pos[0] + vec[0], pos[1] + vec[1])
+                if vec not in energy[next_pos]:
+                    rays.append((next_pos, vec))
+    return len(
+        [
+            pos
+            for pos in energy
+            if 0 <= pos[0] < len(grid) and 0 <= pos[1] < len(grid[pos[0]])
+        ]
+    )
+
+
+@r.solution(2023, 16, Part.A)
+def s_2023_16_a(solution_input: str) -> int:
+    return light_beams(solution_input, True)
+
+
+@r.solution(2023, 16, Part.B)
+def s_2023_16_b(solution_input: str) -> int:
+    return light_beams(solution_input, False)
