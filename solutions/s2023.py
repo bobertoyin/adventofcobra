@@ -1,5 +1,6 @@
 from collections import deque, defaultdict, Counter
 from functools import cache
+import heapq
 from itertools import combinations
 from math import lcm
 from re import compile
@@ -990,3 +991,45 @@ def s_2023_16_a(solution_input: str) -> int:
 @r.solution(2023, 16, Part.B)
 def s_2023_16_b(solution_input: str) -> int:
     return light_beams(solution_input, False)
+
+
+def crucible(solution_input: str, part_a: bool) -> int:
+    grid = [[int(c) for c in l] for l in solution_input.split("\n")]
+    queue = [(0, (0, 0), (0, 0))]
+    end = (len(grid) - 1, len(grid[-1]) - 1)
+    minimum = 1 if part_a else 4
+    maximum = 3 if part_a else 10
+    visited = set()
+    while queue:
+        dist, pos, vec = heapq.heappop(queue)
+        if pos == end:
+            return dist
+        inverse_vec = (vec[0] * -1, vec[1] * -1)
+        if (pos, vec) not in visited:
+            visited.add((pos, vec))
+            moves = {(-1, 0), (1, 0), (0, 1), (0, -1)}
+            if vec in moves:
+                moves.remove(vec)
+            if inverse_vec in moves:
+                moves.remove(inverse_vec)
+            for move in moves:
+                neighbor = pos
+                new_dist = dist
+                for i in range(1, maximum + 1):
+                    neighbor = (neighbor[0] + move[0], neighbor[1] + move[1])
+                    if 0 <= neighbor[0] < len(grid) and 0 <= neighbor[1] < len(
+                        grid[neighbor[0]]
+                    ):
+                        new_dist += grid[neighbor[0]][neighbor[1]]
+                        if i >= minimum:
+                            heapq.heappush(queue, (new_dist, neighbor, move))
+
+
+@r.solution(2023, 17, Part.A)
+def s_2023_17_a(solution_input: str) -> int:
+    return crucible(solution_input, True)
+
+
+@r.solution(2023, 17, Part.B)
+def s_2023_17_b(solution_input: str) -> int:
+    return crucible(solution_input, False)
