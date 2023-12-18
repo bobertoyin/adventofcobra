@@ -2,7 +2,7 @@ from collections import deque, defaultdict, Counter
 from functools import cache
 import heapq
 from itertools import combinations
-from math import lcm
+from math import lcm, gcd
 from re import compile
 from typing import Callable
 
@@ -1033,3 +1033,91 @@ def s_2023_17_a(solution_input: str) -> int:
 @r.solution(2023, 17, Part.B)
 def s_2023_17_b(solution_input: str) -> int:
     return crucible(solution_input, False)
+
+
+def lagoon_trench(solution_input: str, part_a: bool) -> int:
+    current = (0, 0)
+    edges = []
+    moves = {
+        "R": (0, 1),
+        "L": (0, -1),
+        "U": (-1, 0),
+        "D": (1, 0),
+    }
+    edge_convert = {
+        ("R", "R"): "-",
+        ("L", "L"): "-",
+        ("U", "U"): "|",
+        ("D", "D"): "|",
+        ("U", "R"): "F",
+        ("L", "D"): "F",
+        ("U", "L"): "7",
+        ("R", "D"): "7",
+        ("D", "L"): "J",
+        ("R", "U"): "J",
+        ("D", "R"): "L",
+        ("L", "U"): "L",
+    }
+    dir_convert = {0: "R", 1: "D", 2: "L", 3: "U"}
+    commands = []
+    for l in solution_input.split("\n"):
+        direction, amount, color = l.split(" ")
+        if not part_a:
+            real_command = color[2 : len(color) - 1]
+            direction = dir_convert[int(real_command[-1])]
+            amount = int(real_command[0:5], 16)
+        commands.append((direction, amount))
+    if not part_a:
+        return -1
+    for direction, amount in commands:
+        for _ in range(int(amount)):
+            move = moves[direction]
+            current = (current[0] + move[0], current[1] + move[1])
+            edges.append((current, direction))
+    edges.append(edges[0])
+    min_x = min([e[0][0] for e in edges])
+    min_y = min([e[0][1] for e in edges])
+    adjust = (max(0, 0 - min_x), max(0, 0 - min_y))
+    edges = [
+        ((edge[0][0] + adjust[0], edge[0][1] + adjust[1]), edge[1]) for edge in edges
+    ]
+    max_x = max([e[0][0] for e in edges])
+    max_y = max([e[0][1] for e in edges])
+    grid = [["." for _ in range(max_y + 1)] for _ in range(max_x + 1)]
+    edge_count = 0
+    for i, ((r, c), d) in enumerate(edges):
+        if i < len(edges) - 1:
+            next_d = edges[i + 1][1]
+            grid[r][c] = edge_convert[(d, next_d)]
+            edge_count += 1
+    inner_count = 0
+    for r in range(len(grid)):
+        for c in range(len(grid[r])):
+            if grid[r][c] == ".":
+                x_ray = (r - c, 0)
+                edges = 0
+                while x_ray != (r, c):
+                    if (
+                        0 <= x_ray[0] < len(grid)
+                        and 0 <= x_ray[1] < len(grid[x_ray[0]])
+                        and grid[x_ray[0]][x_ray[1]] != "."
+                    ):
+                        pipe = grid[x_ray[0]][x_ray[1]]
+                        if pipe in ["7", "L"]:
+                            edges += 2
+                        else:
+                            edges += 1
+                    x_ray = (x_ray[0] + 1, x_ray[1] + 1)
+                if edges % 2 == 1:
+                    inner_count += 1
+    return edge_count + inner_count
+
+
+@r.solution(2023, 18, Part.A)
+def s_2023_18_a(solution_input: str) -> int:
+    return lagoon_trench(solution_input, True)
+
+
+@r.solution(2023, 18, Part.B)
+def s_2023_18_b(solution_input: str) -> int:
+    return lagoon_trench(solution_input, False)
