@@ -1044,20 +1044,6 @@ def lagoon_trench(solution_input: str, part_a: bool) -> int:
         "U": (-1, 0),
         "D": (1, 0),
     }
-    edge_convert = {
-        ("R", "R"): "-",
-        ("L", "L"): "-",
-        ("U", "U"): "|",
-        ("D", "D"): "|",
-        ("U", "R"): "F",
-        ("L", "D"): "F",
-        ("U", "L"): "7",
-        ("R", "D"): "7",
-        ("D", "L"): "J",
-        ("R", "U"): "J",
-        ("D", "R"): "L",
-        ("L", "U"): "L",
-    }
     dir_convert = {0: "R", 1: "D", 2: "L", 3: "U"}
     commands = []
     for l in solution_input.split("\n"):
@@ -1065,71 +1051,25 @@ def lagoon_trench(solution_input: str, part_a: bool) -> int:
         if not part_a:
             real_command = color[2 : len(color) - 1]
             direction = dir_convert[int(real_command[-1])]
-            amount = real_command[0:5], 16
+            amount = int(real_command[0:5], 16)
         commands.append((direction, int(amount)))
-    for direction, amount in commands:
-        for _ in range(amount):
-            move = moves[direction]
-            current = (current[0] + move[0], current[1] + move[1])
-            edges.append((current, direction))
-    edges.append(edges[0])
-    min_x = min([e[0][0] for e in edges])
-    min_y = min([e[0][1] for e in edges])
-    adjust = (max(0, 0 - min_x), max(0, 0 - min_y))
-    edges = [
-        ((edge[0][0] + adjust[0], edge[0][1] + adjust[1]), edge[1]) for edge in edges
-    ]
-    max_x = max([e[0][0] for e in edges])
-    max_y = max([e[0][1] for e in edges])
-    grid = [["." for _ in range(max_y + 1)] for _ in range(max_x + 1)]
     edge_count = 0
-    for i, ((r, c), d) in enumerate(edges):
-        if i < len(edges) - 1:
-            next_d = edges[i + 1][1]
-            grid[r][c] = edge_convert[(d, next_d)]
-            edge_count += 1
-    visited = set()
-    horizon = deque()
-    for r in range(len(grid)):
-        if len(horizon) > 0:
-            break
-        for c in range(len(grid[r])):
-            if grid[r][c] == ".":
-                x_ray = (r - c, 0)
-                edges = 0
-                while x_ray != (r, c):
-                    if (
-                        0 <= x_ray[0] < len(grid)
-                        and 0 <= x_ray[1] < len(grid[x_ray[0]])
-                        and grid[x_ray[0]][x_ray[1]] != "."
-                    ):
-                        pipe = grid[x_ray[0]][x_ray[1]]
-                        if pipe in ["7", "L"]:
-                            edges += 2
-                        else:
-                            edges += 1
-                    x_ray = (x_ray[0] + 1, x_ray[1] + 1)
-                if edges % 2 == 1:
-                    horizon.append((r, c))
-                    break
-    while len(horizon) > 0:
-        r, c = horizon.popleft()
-        neighbors = []
-        if r > 0:
-            neighbors.append((-1, 0))
-        if r < len(grid) - 1:
-            neighbors.append((1, 0))
-        if c > 0:
-            neighbors.append((0, -1))
-        if c < len(grid[r]) - 1:
-            neighbors.append((0, 1))
-        for n_r, n_c in neighbors:
-            r_new = r + n_r
-            c_new = c + n_c
-            if (r_new, c_new) not in visited and grid[r_new][c_new] == ".":
-                horizon.append((r_new, c_new))
-                visited.add((r_new, c_new))
-    return edge_count + len(visited)
+    for direction, amount in commands:
+        move = moves[direction]
+        current = (current[0] + (move[0] * amount), current[1] + (move[1] * amount))
+        edge_count += amount
+        edges.append(current)
+    min_x = min([e[0] for e in edges])
+    min_y = min([e[1] for e in edges])
+    adjust = (max(0, 0 - min_x), max(0, 0 - min_y))
+    edges = [(edge[0] + adjust[0], edge[1] + adjust[1]) for edge in edges]
+    area = 0
+    for i, edge in enumerate(edges):
+        next_edge = edges[i + 1] if i < len(edges) - 1 else edges[0]
+        area += edge[1] * next_edge[0] - next_edge[1] * edge[0]
+    area = abs(area / 2)
+    insides = area - (edge_count / 2) + 1
+    return round(edge_count + insides)
 
 
 @r.solution(2023, 18, Part.A)
