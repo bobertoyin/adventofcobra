@@ -2,7 +2,7 @@ from collections import deque, defaultdict, Counter
 from functools import cache
 import heapq
 from itertools import combinations
-from math import lcm, gcd
+from math import lcm
 from re import compile
 from typing import Callable
 
@@ -1065,12 +1065,10 @@ def lagoon_trench(solution_input: str, part_a: bool) -> int:
         if not part_a:
             real_command = color[2 : len(color) - 1]
             direction = dir_convert[int(real_command[-1])]
-            amount = int(real_command[0:5], 16)
-        commands.append((direction, amount))
-    if not part_a:
-        return -1
+            amount = real_command[0:5], 16
+        commands.append((direction, int(amount)))
     for direction, amount in commands:
-        for _ in range(int(amount)):
+        for _ in range(amount):
             move = moves[direction]
             current = (current[0] + move[0], current[1] + move[1])
             edges.append((current, direction))
@@ -1090,8 +1088,11 @@ def lagoon_trench(solution_input: str, part_a: bool) -> int:
             next_d = edges[i + 1][1]
             grid[r][c] = edge_convert[(d, next_d)]
             edge_count += 1
-    inner_count = 0
+    visited = set()
+    horizon = deque()
     for r in range(len(grid)):
+        if len(horizon) > 0:
+            break
         for c in range(len(grid[r])):
             if grid[r][c] == ".":
                 x_ray = (r - c, 0)
@@ -1109,8 +1110,26 @@ def lagoon_trench(solution_input: str, part_a: bool) -> int:
                             edges += 1
                     x_ray = (x_ray[0] + 1, x_ray[1] + 1)
                 if edges % 2 == 1:
-                    inner_count += 1
-    return edge_count + inner_count
+                    horizon.append((r, c))
+                    break
+    while len(horizon) > 0:
+        r, c = horizon.popleft()
+        neighbors = []
+        if r > 0:
+            neighbors.append((-1, 0))
+        if r < len(grid) - 1:
+            neighbors.append((1, 0))
+        if c > 0:
+            neighbors.append((0, -1))
+        if c < len(grid[r]) - 1:
+            neighbors.append((0, 1))
+        for n_r, n_c in neighbors:
+            r_new = r + n_r
+            c_new = c + n_c
+            if (r_new, c_new) not in visited and grid[r_new][c_new] == ".":
+                horizon.append((r_new, c_new))
+                visited.add((r_new, c_new))
+    return edge_count + len(visited)
 
 
 @r.solution(2023, 18, Part.A)
