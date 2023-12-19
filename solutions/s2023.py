@@ -1,10 +1,13 @@
 from collections import deque, defaultdict, Counter
+from copy import deepcopy
 from functools import cache
 import heapq
 from itertools import combinations
-from math import lcm
+from math import lcm, prod
 from re import compile
 from typing import Callable
+
+from numpy import ndarray, full
 
 from .runner import r, Part
 
@@ -1080,3 +1083,129 @@ def s_2023_18_a(solution_input: str) -> int:
 @r.solution(2023, 18, Part.B)
 def s_2023_18_b(solution_input: str) -> int:
     return lagoon_trench(solution_input, False)
+
+
+def machine_part_workflows(solution_input: str, part_a: bool) -> int:
+    is_workflows = True
+    workflows = {}
+    parts = []
+    for l in solution_input.split("\n"):
+        if l == "":
+            is_workflows = False
+            continue
+        if is_workflows:
+            name, rest = l.split("{")
+            rules = [
+                rule if not part_a else create_rule(rule)
+                for rule in rest.replace("}", "").split(",")
+            ]
+            workflows[name] = rules
+        else:
+            part = {}
+            attrs = l.replace("{", "").replace("}", "").split(",")
+            for attr in attrs:
+                name, val = attr.split("=")
+                part[name] = int(val)
+            parts.append(part)
+    total = 0
+    if part_a:
+        for part in parts:
+            workflow = "in"
+            while workflow not in "AR":
+                for rule in workflows[workflow]:
+                    result = rule(part)
+                    if result:
+                        workflow = result
+                        break
+            if workflow == "A":
+                total += sum(part.values())
+    else:
+        # workflow analysis: see where accept states are and figure out the valid attr ranges
+        goals = []
+        for workflow, rules in workflows.items():
+            for rule in rules:
+                if "A" in rule:
+                    goals.append(workflow)
+                    break
+        for goal in goals:
+            for idx, rule in enumerate(workflows[goal]):
+                if "A" in rule:
+                    ranges = {
+                        "x": full(4000, 1),
+                        "m": full(4000, 1),
+                        "a": full(4000, 1),
+                        "s": full(4000, 1),
+                    }
+                    total += backtrack_rule(goal, idx, workflows, ranges)
+    return total
+
+
+def backtrack_rule(
+    current: str, idx: int, workflows: dict[str, list[str]], ranges: dict[str, ndarray]
+) -> int:
+    if ":" in workflows[current][idx]:
+        conditional = workflows[current][idx].split(":")[0]
+        if ">" in conditional:
+            attr, val = conditional.split(">")
+            val = int(val) - 1
+            while val >= 0:
+                ranges[attr][val] = 0
+                val -= 1
+        else:
+            attr, val = conditional.split("<")
+            val = int(val) - 1
+            while val < len(ranges[attr]):
+                ranges[attr][val] = 0
+                val += 1
+    while idx > 0:
+        idx -= 1
+        conditional = workflows[current][idx].split(":")[0]
+        if ">" in conditional:
+            attr, val = conditional.split(">")
+            val = int(val)
+            while val < len(ranges[attr]):
+                ranges[attr][val] = 0
+                val += 1
+        else:
+            attr, val = conditional.split("<")
+            val = int(val) - 2
+            while val >= 0:
+                ranges[attr][val] = 0
+                val -= 1
+    if current == "in":
+        return prod([sum(v) for v in ranges.values()])
+    else:
+        total = 0
+        for workflow, rules in workflows.items():
+            for idx, rule in enumerate(rules):
+                if current in rule:
+                    # recursion error lol
+                    total += backtrack_rule(
+                        workflow,
+                        idx,
+                        workflows,
+                        {r: val.copy() for r, val in ranges.items()},
+                    )
+        return total
+
+
+def create_rule(rule: str) -> Callable[[dict[str, int]], str | None]:
+    if ":" not in rule:
+        return lambda _: rule
+    conditional, result = rule.split(":")
+    if "<" in conditional:
+        var, num = conditional.split("<")
+        return lambda x: result if x[var] < int(num) else None
+    else:
+        var, num = conditional.split(">")
+        return lambda x: result if x[var] > int(num) else None
+
+
+@r.solution(2023, 19, Part.A)
+def s_2023_19_a(solution_input: str) -> int:
+    return machine_part_workflows(solution_input, True)
+
+
+@r.solution(2023, 19, Part.B)
+def s_2023_19_b(solution_input: str) -> int:
+    return machine_part_workflows(solution_input, False)
