@@ -1095,11 +1095,11 @@ def machine_part_workflows(solution_input: str, part_a: bool) -> int:
             continue
         if is_workflows:
             name, rest = l.split("{")
-            rules = [
+            rules = (
                 rule if not part_a else create_rule(rule)
                 for rule in rest.replace("}", "").split(",")
-            ]
-            workflows[name] = rules
+            )
+            workflows[name] = tuple(rules)
         else:
             part = {}
             attrs = l.replace("{", "").replace("}", "").split(",")
@@ -1136,13 +1136,40 @@ def machine_part_workflows(solution_input: str, part_a: bool) -> int:
                         "a": full(4000, 1),
                         "s": full(4000, 1),
                     }
-                    total += backtrack_rule(goal, idx, workflows, ranges)
+                    total += backtrack_rule(
+                        goal,
+                        idx,
+                        workflows_cachable(workflows),
+                        ranges_cachable(ranges),
+                    )
     return total
 
 
+def workflows_cachable(workflows: dict[str, tuple[str]]) -> tuple[str, tuple[str]]:
+    return ((workflow, rules) for workflow, rules in workflows.items())
+
+
+def workflows_decachable(workflows: tuple[str, tuple[str]]) -> dict[str, tuple[str]]:
+    return {workflow: rules for workflow, rules in workflows}
+
+
+def ranges_cachable(ranges: dict[str, ndarray]) -> tuple[str, ndarray]:
+    return ((attr, array.copy()) for attr, array in ranges.items())
+
+
+def ranges_decachable(ranges: tuple[str, ndarray]) -> dict[str, ndarray]:
+    return {attr: array for attr, array in ranges}
+
+
+@cache
 def backtrack_rule(
-    current: str, idx: int, workflows: dict[str, list[str]], ranges: dict[str, ndarray]
+    current: str,
+    idx: int,
+    workflows: tuple[str, tuple[str]],
+    ranges: tuple[str, ndarray],
 ) -> int:
+    workflows = workflows_decachable(workflows)
+    ranges = ranges_decachable(ranges)
     if ":" in workflows[current][idx]:
         conditional = workflows[current][idx].split(":")[0]
         if ">" in conditional:
@@ -1183,8 +1210,8 @@ def backtrack_rule(
                     total += backtrack_rule(
                         workflow,
                         idx,
-                        workflows,
-                        {r: val.copy() for r, val in ranges.items()},
+                        workflows_cachable(workflows),
+                        ranges_cachable(ranges),
                     )
         return total
 
