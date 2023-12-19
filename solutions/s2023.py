@@ -1127,6 +1127,7 @@ def machine_part_workflows(solution_input: str, part_a: bool) -> int:
                 if "A" in rule:
                     goals.append(workflow)
                     break
+        traces = []
         for goal in goals:
             for idx, rule in enumerate(workflows[goal]):
                 if "A" in rule:
@@ -1136,84 +1137,47 @@ def machine_part_workflows(solution_input: str, part_a: bool) -> int:
                         "a": full(4000, 1),
                         "s": full(4000, 1),
                     }
-                    total += backtrack_rule(
+                    traces += backtrack_rule(
                         goal,
                         idx,
-                        workflows_cachable(workflows),
-                        ranges_cachable(ranges),
+                        workflows,
                     )
     return total
 
 
-def workflows_cachable(workflows: dict[str, tuple[str]]) -> tuple[str, tuple[str]]:
-    return ((workflow, rules) for workflow, rules in workflows.items())
-
-
-def workflows_decachable(workflows: tuple[str, tuple[str]]) -> dict[str, tuple[str]]:
-    return {workflow: rules for workflow, rules in workflows}
-
-
-def ranges_cachable(ranges: dict[str, ndarray]) -> tuple[str, ndarray]:
-    return ((attr, array.copy()) for attr, array in ranges.items())
-
-
-def ranges_decachable(ranges: tuple[str, ndarray]) -> dict[str, ndarray]:
-    return {attr: array for attr, array in ranges}
-
-
-@cache
 def backtrack_rule(
     current: str,
     idx: int,
-    workflows: tuple[str, tuple[str]],
-    ranges: tuple[str, ndarray],
-) -> int:
-    workflows = workflows_decachable(workflows)
-    ranges = ranges_decachable(ranges)
-    if ":" in workflows[current][idx]:
-        conditional = workflows[current][idx].split(":")[0]
-        if ">" in conditional:
-            attr, val = conditional.split(">")
-            val = int(val) - 1
-            while val >= 0:
-                ranges[attr][val] = 0
-                val -= 1
+    workflows: dict[str, tuple[str]],
+) -> list[list[tuple[bool, str]]]:
+    traces = []
+    horizon = deque([(current, idx, [])])
+    while len(horizon) > 0:
+        print(len(horizon))
+        workflow, idx, trace = horizon.popleft()
+        new_rules = grab_rules(idx, workflows[workflow])
+        trace += new_rules
+        if workflow == "in":
+            traces.append(trace)
         else:
-            attr, val = conditional.split("<")
-            val = int(val) - 1
-            while val < len(ranges[attr]):
-                ranges[attr][val] = 0
-                val += 1
+            for new_w, rules in workflows.items():
+                for idx, rule in enumerate(rules):
+                    if workflow in rule:
+                        horizon.append((new_w, idx, [r for r in trace]))
+    return traces
+
+
+@cache
+def grab_rules(idx: int, rules: tuple[str]) -> list[tuple[bool, str]]:
+    current_trace = []
+    if ":" in rules[idx]:
+        conditional = rules[idx].split(":")[0]
+        current_trace.append((True, conditional))
     while idx > 0:
         idx -= 1
-        conditional = workflows[current][idx].split(":")[0]
-        if ">" in conditional:
-            attr, val = conditional.split(">")
-            val = int(val)
-            while val < len(ranges[attr]):
-                ranges[attr][val] = 0
-                val += 1
-        else:
-            attr, val = conditional.split("<")
-            val = int(val) - 2
-            while val >= 0:
-                ranges[attr][val] = 0
-                val -= 1
-    if current == "in":
-        return prod([sum(v) for v in ranges.values()])
-    else:
-        total = 0
-        for workflow, rules in workflows.items():
-            for idx, rule in enumerate(rules):
-                if current in rule:
-                    # recursion error lol
-                    total += backtrack_rule(
-                        workflow,
-                        idx,
-                        workflows_cachable(workflows),
-                        ranges_cachable(ranges),
-                    )
-        return total
+        conditional = rules[idx].split(":")[0]
+        current_trace.append((False, conditional))
+    return current_trace
 
 
 def create_rule(rule: str) -> Callable[[dict[str, int]], str | None]:
