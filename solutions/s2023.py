@@ -1132,10 +1132,10 @@ def machine_part_workflows(solution_input: str, part_a: bool) -> int:
             for idx, rule in enumerate(workflows[goal]):
                 if "A" in rule:
                     ranges = {
-                        "x": full(4000, 1),
-                        "m": full(4000, 1),
-                        "a": full(4000, 1),
-                        "s": full(4000, 1),
+                        "x": full(4000, 1, dtype="int64"),
+                        "m": full(4000, 1, dtype="int64"),
+                        "a": full(4000, 1, dtype="int64"),
+                        "s": full(4000, 1, dtype="int64"),
                     }
                     traces += backtrack_rule(
                         goal,
@@ -1162,7 +1162,7 @@ def backtrack_rule(
         else:
             for new_w, rules in workflows.items():
                 for idx, rule in enumerate(rules):
-                    if workflow in rule:
+                    if workflow == rule or rule.endswith(f":{workflow}"):
                         horizon.append((new_w, idx, [r for r in trace]))
     return traces
 
@@ -1200,3 +1200,77 @@ def s_2023_19_a(solution_input: str) -> int:
 @r.solution(2023, 19, Part.B)
 def s_2023_19_b(solution_input: str) -> int:
     return machine_part_workflows(solution_input, False)
+
+
+def pulses(solution_input: str, part_a: bool) -> int:
+    modules = {}
+    pulses = deque()
+    flip_flops = {}
+    conjunctions = {}
+    for l in solution_input.split("\n"):
+        src, dst = l.split(" -> ")
+        dst = dst.split(", ")
+        if src.startswith("%"):
+            src = src[1:]
+            flip_flops[src] = False
+        if src.startswith("&"):
+            src = src[1:]
+            conjunctions[src] = {}
+        modules[src] = dst
+    for c in conjunctions:
+        for m, dst in modules.items():
+            if c in dst:
+                conjunctions[c][m] = False
+    if part_a:
+        tlc = 0
+        thc = 0
+        for _ in range(1000):
+            pulses.append(("button", False, "broadcaster"))
+            lc, hc = run_pulses(pulses, modules, flip_flops, conjunctions)
+            tlc += lc
+            thc += hc
+        return tlc * thc
+    else:
+        return -1
+
+
+def run_pulses(
+    pulses: deque[tuple[str, bool, str]],
+    modules: dict[str, list[str]],
+    flip_flops: dict[str, bool],
+    conjunctions: dict[str, dict[str, bool]],
+) -> tuple[int, int]:
+    low_count = 0
+    high_count = 0
+    while len(pulses) > 0:
+        src, high, loc = pulses.popleft()
+        if high:
+            high_count += 1
+        else:
+            low_count += 1
+        if not high and loc == "rx":
+            rx_pulses += 1
+        if loc in flip_flops:
+            if not high:
+                flip_flops[loc] = not flip_flops[loc]
+                for dst in modules[loc]:
+                    pulses.append((loc, flip_flops[loc], dst))
+        elif loc in conjunctions:
+            conjunctions[loc][src] = high
+            pulse = not all(conjunctions[loc].values())
+            for dst in modules[loc]:
+                pulses.append((loc, pulse, dst))
+        elif loc in modules:
+            for dst in modules[loc]:
+                pulses.append((loc, high, dst))
+    return low_count, high_count
+
+
+@r.solution(2023, 20, Part.A)
+def s_2023_20_a(solution_input: str) -> int:
+    return pulses(solution_input, True)
+
+
+@r.solution(2023, 20, Part.B)
+def s_2023_20_b(solution_input: str) -> int:
+    return pulses(solution_input, False)
