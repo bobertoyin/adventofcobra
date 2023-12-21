@@ -1,11 +1,11 @@
 from collections import deque, defaultdict, Counter
-from copy import deepcopy
 from functools import cache
 import heapq
 from itertools import combinations
-from math import lcm, prod
+from math import lcm
 from re import compile
 from typing import Callable
+from time import sleep
 
 from numpy import ndarray, full
 
@@ -1274,3 +1274,58 @@ def s_2023_20_a(solution_input: str) -> int:
 @r.solution(2023, 20, Part.B)
 def s_2023_20_b(solution_input: str) -> int:
     return pulses(solution_input, False)
+
+
+def step_counter(solution_input: str, part_a: bool) -> int:
+    grid = [list(l) for l in solution_input.split("\n")]
+    num_steps = 64 if part_a else 7
+    moves = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    counts = {(r, c): 1 if cell == "S" else 0 for r, row in enumerate(grid) for c, cell in enumerate(row)}
+    for _ in range(num_steps):
+        new_counts = {}
+        wrap = []
+        starts = [pos for pos in counts if counts[pos] > 0]
+        for pos in starts:
+            og_counts = counts[pos]
+            counts[pos] = 0
+            for mr, mc in moves:
+                nr = pos[0] + mr
+                nc = pos[1] + mc
+                w = False
+                if not part_a:
+                    nr, nc, w = wrap_around((nr, nc), grid)
+                if 0 <= nr < len(grid) and 0 <= nc < len(grid[nr]) and grid[nr][nc] != "#":
+                    new_counts[(nr, nc)] = og_counts
+        for p, c in new_counts.items():
+            counts[p] = c
+        for count, pos in wrap:
+            counts[pos] += count
+        for r, row in enumerate(grid):
+            print(r + 1, "\t", "".join([str(counts[(r, c)]) if cell != "#" else cell for c, cell in enumerate(row)]))
+        print()
+        sleep(1)
+    return sum(counts.values())
+
+
+def wrap_around(pos: tuple[int, int], grid: list[list[str]]) -> tuple[int, int, bool]:
+    r, c = pos
+    nr = r
+    nc = c
+    wrapped = False
+    if r < 0 or r >= len(grid):
+        nr %= len(grid)
+        wrapped = True
+    if c < 0 or c >= len(grid[nr]):
+        nc %= len(grid[nr])
+        wrapped = True
+    return (nr, nc, wrapped)
+
+
+@r.solution(2023, 21, Part.A)
+def s_2023_21_a(solution_input: str) -> int:
+    return step_counter(solution_input, True)
+
+
+@r.solution(2023, 21, Part.B)
+def s_2023_21_b(solution_input: str) -> int:
+    return step_counter(solution_input, False)
