@@ -1280,31 +1280,37 @@ def step_counter(solution_input: str, part_a: bool) -> int:
     grid = [list(l) for l in solution_input.split("\n")]
     num_steps = 64 if part_a else 7
     moves = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-    counts = {(r, c): 1 if cell == "S" else 0 for r, row in enumerate(grid) for c, cell in enumerate(row)}
+    counts = {
+        (r, c): set([(0, 0)]) if cell == "S" else set()
+        for r, row in enumerate(grid)
+        for c, cell in enumerate(row)
+    }
     for _ in range(num_steps):
-        new_counts = {}
-        wrap = []
-        starts = [pos for pos in counts if counts[pos] > 0]
+        starts = [pos for pos in counts if len(counts[pos]) > 0]
+        updates = defaultdict(set)
         for pos in starts:
-            og_counts = counts[pos]
-            counts[pos] = 0
             for mr, mc in moves:
                 nr = pos[0] + mr
                 nc = pos[1] + mc
                 w = False
                 if not part_a:
                     nr, nc, w = wrap_around((nr, nc), grid)
-                if 0 <= nr < len(grid) and 0 <= nc < len(grid[nr]) and grid[nr][nc] != "#":
-                    new_counts[(nr, nc)] = og_counts
-        for p, c in new_counts.items():
-            counts[p] = c
-        for count, pos in wrap:
-            counts[pos] += count
-        for r, row in enumerate(grid):
-            print(r + 1, "\t", "".join([str(counts[(r, c)]) if cell != "#" else cell for c, cell in enumerate(row)]))
-        print()
-        sleep(1)
-    return sum(counts.values())
+                if (
+                    0 <= nr < len(grid)
+                    and 0 <= nc < len(grid[nr])
+                    and grid[nr][nc] != "#"
+                ):
+                    if w:
+                        for old in counts[pos]:
+                            new = (old[0] + mr, old[1] + mc)
+                            updates[(nr, nc)].add(new)
+                    else:
+                        updates[(nr, nc)] |= counts[pos]
+        for s in counts.values():
+            s.clear()
+        for p, u in updates.items():
+            counts[p] |= u
+    return sum([len(c) for c in counts.values()])
 
 
 def wrap_around(pos: tuple[int, int], grid: list[list[str]]) -> tuple[int, int, bool]:
