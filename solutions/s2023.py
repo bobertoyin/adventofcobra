@@ -1,5 +1,6 @@
 from collections import deque, defaultdict, Counter
 from functools import cache
+from copy import deepcopy
 import heapq
 from itertools import combinations
 from math import lcm
@@ -1335,3 +1336,81 @@ def s_2023_21_a(solution_input: str) -> int:
 @r.solution(2023, 21, Part.B)
 def s_2023_21_b(solution_input: str) -> int:
     return step_counter(solution_input, False)
+
+
+def sand_slabs(solution_input: str, part_a: bool) -> int:
+    snapshot = defaultdict(set)
+    for brick, l in enumerate(solution_input.split("\n")):
+        p1, p2 = l.split("~")
+        p1 = tuple([int(p) for p in p1.split(",")])
+        p2 = tuple([int(p) for p in p2.split(",")])
+        for i, (d1, d2) in enumerate(zip(p1, p2)):
+            r = range(0, abs(d2 - d1) + 1)
+            for step in r:
+                new = list(p1 if d2 > d1 else p2)
+                new[i] += step
+                snapshot[brick].add(tuple(new))
+    while gaps(snapshot):
+        gravity(snapshot)
+    if part_a:
+        return len(
+            [
+                disintegrated
+                for disintegrated in snapshot
+                if not gaps(snapshot, exclude=disintegrated)
+            ]
+        )
+    else:
+        total = 0
+        for disintegrated in snapshot:
+            snapshot_copy = deepcopy(snapshot)
+            del snapshot_copy[disintegrated]
+            bricks = set()
+            while gaps(snapshot_copy):
+                bricks.update(gravity(snapshot_copy))
+            total += len(bricks)
+        return total
+
+
+def gravity(snapshot: dict[int, set[tuple[int, int, int]]]) -> set[int]:
+    fallen = set()
+    positions = {p for ps in snapshot.values() for p in ps}
+    for brick in list(snapshot.keys()):
+        min_z = min([p[2] for p in snapshot[brick]])
+        underneath = {tuple([p[0], p[1], p[2] - 1]) for p in snapshot[brick]}
+        gaps = [
+            u not in positions and u[2] >= 1 for u in underneath if u[2] + 1 == min_z
+        ]
+        if all(gaps):
+            fallen.add(brick)
+            positions.difference_update(snapshot[brick])
+            positions.update(underneath)
+            snapshot[brick] = underneath
+    return fallen
+
+
+def gaps(
+    snapshot: dict[int, set[tuple[int, int, int]]], exclude: int | None = None
+) -> bool:
+    positions = {p for b, ps in snapshot.items() for p in ps if b != exclude}
+    for b, ps in snapshot.items():
+        if b == exclude:
+            continue
+        min_z = min([p[2] for p in ps])
+        underneath = {tuple([p[0], p[1], p[2] - 1]) for p in ps}
+        gaps = [
+            u not in positions and u[2] >= 1 for u in underneath if (u[2] + 1) == min_z
+        ]
+        if all(gaps):
+            return True
+    return False
+
+
+@r.solution(2023, 22, Part.A)
+def s_2023_22_a(solution_input: str) -> int:
+    return sand_slabs(solution_input, True)
+
+
+@r.solution(2023, 22, Part.B)
+def s_2023_22_b(solution_input: str) -> int:
+    return sand_slabs(solution_input, False)
